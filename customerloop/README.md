@@ -4,6 +4,26 @@ A Flutter application demonstrating Firebase Authentication and Cloud Firestore 
 
 > **📚 For detailed project structure documentation, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)**
 
+> **🌳 For Sprint 2 Widget Tree & Reactive UI Assignment, see [WIDGET_TREE_ASSIGNMENT.md](WIDGET_TREE_ASSIGNMENT.md)**
+
+## 🎯 Sprint 2: Widget Tree & Reactive UI Demo
+
+This project includes an interactive demonstration of Flutter's widget tree hierarchy and reactive UI model. The demo showcases:
+
+- **Widget Tree Visualization**: Complete hierarchy with 4 interactive sections
+- **Reactive State Updates**: Counter, theme toggle, color picker, and widget visibility
+- **Performance Optimization**: Demonstrates how Flutter rebuilds only affected widgets
+- **Educational Documentation**: Comprehensive explanation of widget tree concepts
+
+**Quick Start for Demo:**
+```bash
+flutter run -d chrome
+```
+
+The app will launch with the Widget Tree Demo Screen showing interactive examples of state management and reactive updates.
+
+---
+
 ## Features
 
 - **User Authentication**: Sign up, login, and logout functionality using Firebase Authentication
