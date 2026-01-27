@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Stateless vs Stateful Widgets Demo
 /// This screen demonstrates the difference between StatelessWidget and StatefulWidget
-/// 
+///
 /// StatelessWidget: Used for static UI that doesn't change
 /// StatefulWidget: Used for dynamic UI that responds to user interactions
 
@@ -141,10 +141,7 @@ class _StatelessStatefulDemoScreenState
         const SizedBox(height: 12),
 
         // Example 3: Static Welcome Message
-        WelcomeMessage(
-          name: 'Flutter Developer',
-          isDark: _isDarkMode,
-        ),
+        WelcomeMessage(name: 'Flutter Developer', isDark: _isDarkMode),
         const SizedBox(height: 12),
 
         // Example 4: Static Feature List
@@ -387,11 +384,7 @@ class WelcomeMessage extends StatelessWidget {
   final String name;
   final bool isDark;
 
-  const WelcomeMessage({
-    super.key,
-    required this.name,
-    required this.isDark,
-  });
+  const WelcomeMessage({super.key, required this.name, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -452,25 +445,30 @@ class FeatureListCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ...features.map((feature) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle,
-                          color: Colors.green, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? Colors.grey[300] : Colors.grey[700],
-                          ),
+            ...features.map(
+              (feature) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        feature,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -616,14 +614,18 @@ class _ThemeToggleCardState extends State<ThemeToggleCard> {
             ElevatedButton.icon(
               onPressed: widget.onToggle,
               icon: Icon(
-                  widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              ),
               label: Text(
-                  widget.isDarkMode ? 'Switch to Light' : 'Switch to Dark'),
+                widget.isDarkMode ? 'Switch to Light' : 'Switch to Dark',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -690,27 +692,30 @@ class _ColorPickerCardState extends State<ColorPickerCard> {
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
-              children: widget.colors.map((color) {
-                final isSelected = color == widget.selectedColor;
-                return GestureDetector(
-                  onTap: () => widget.onColorSelected(color),
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Colors.black : Colors.transparent,
-                        width: 3,
+              children:
+                  widget.colors.map((color) {
+                    final isSelected = color == widget.selectedColor;
+                    return GestureDetector(
+                      onTap: () => widget.onColorSelected(color),
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color:
+                                isSelected ? Colors.black : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                        child:
+                            isSelected
+                                ? const Icon(Icons.check, color: Colors.white)
+                                : null,
                       ),
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
-                        : null,
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 8),
             Text(
@@ -773,7 +778,7 @@ class _ToggleSwitchCardState extends State<ToggleSwitchCard> {
             Switch(
               value: widget.isToggled,
               onChanged: widget.onToggle,
-              activeThumbColor: Colors.green,
+              thumbColor: WidgetStateProperty.all(Colors.green),
             ),
             const SizedBox(height: 8),
             Text(
@@ -834,12 +839,13 @@ class _DropdownCardState extends State<DropdownCard> {
             DropdownButton<String>(
               value: widget.selectedFruit,
               isExpanded: true,
-              items: widget.fruits.map((String fruit) {
-                return DropdownMenuItem<String>(
-                  value: fruit,
-                  child: Text(fruit),
-                );
-              }).toList(),
+              items:
+                  widget.fruits.map((String fruit) {
+                    return DropdownMenuItem<String>(
+                      value: fruit,
+                      child: Text(fruit),
+                    );
+                  }).toList(),
               onChanged: widget.onFruitChanged,
               dropdownColor: widget.isDark ? Colors.grey[800] : Colors.white,
               style: TextStyle(
