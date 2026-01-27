@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 import 'widget_tree_demo_screen.dart';
+import 'stateless_stateful_demo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -268,6 +269,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.blue.shade700,
                       side: BorderSide(color: Colors.blue.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Stateless vs Stateful Demo Button (for Sprint 2 assignment)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const StatelessStatefulDemoScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.widgets),
+                    label: const Text('Stateless vs Stateful Demo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green.shade700,
+                      side: BorderSide(color: Colors.green.shade300),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

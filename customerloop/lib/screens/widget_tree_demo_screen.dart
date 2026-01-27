@@ -373,7 +373,7 @@ class _WidgetTreeDemoScreenState extends State<WidgetTreeDemoScreen> {
               ),
               value: _showExtraWidget,
               onChanged: _toggleWidgetVisibility,
-              activeColor: _selectedColor,
+              activeThumbColor: _selectedColor,
             ),
             const SizedBox(height: 16),
             AnimatedContainer(

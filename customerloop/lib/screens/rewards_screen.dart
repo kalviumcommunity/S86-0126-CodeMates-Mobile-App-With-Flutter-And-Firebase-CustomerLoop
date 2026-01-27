@@ -211,7 +211,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: selectedType,
+                          initialValue: selectedType,
                           decoration: const InputDecoration(
                             labelText: 'Reward Type',
                             prefixIcon: Icon(Icons.category),

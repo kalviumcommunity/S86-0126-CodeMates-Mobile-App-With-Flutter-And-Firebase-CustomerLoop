@@ -6,7 +6,11 @@ A Flutter application demonstrating Firebase Authentication and Cloud Firestore 
 
 > **🌳 For Sprint 2 Widget Tree & Reactive UI Assignment, see [WIDGET_TREE_ASSIGNMENT.md](WIDGET_TREE_ASSIGNMENT.md)**
 
-## 🎯 Sprint 2: Widget Tree & Reactive UI Demo
+> **🔄 For Sprint 2 Stateless vs Stateful Widgets Assignment, see [STATELESS_STATEFUL_ASSIGNMENT.md](STATELESS_STATEFUL_ASSIGNMENT.md)**
+
+## 🎯 Sprint 2 Assignments
+
+### Assignment 1: Widget Tree & Reactive UI Demo
 
 This project includes an interactive demonstration of Flutter's widget tree hierarchy and reactive UI model. The demo showcases:
 
@@ -15,12 +19,20 @@ This project includes an interactive demonstration of Flutter's widget tree hier
 - **Performance Optimization**: Demonstrates how Flutter rebuilds only affected widgets
 - **Educational Documentation**: Comprehensive explanation of widget tree concepts
 
-**Quick Start for Demo:**
+### Assignment 2: Stateless vs Stateful Widgets Demo
+
+An educational demo showing the fundamental difference between StatelessWidget and StatefulWidget:
+
+- **Stateless Examples**: Headers, labels, info cards, welcome messages, feature lists
+- **Stateful Examples**: Counter, theme toggle, color picker, switch, dropdown
+- **Interactive Learning**: 5+ interactive elements demonstrating state management
+- **Clear Comparisons**: Side-by-side examples showing when to use each type
+
+**Quick Start for Demos:**
 ```bash
 flutter run -d chrome
+# Click "View Widget Tree Demo" or "Stateless vs Stateful Demo" on login screen
 ```
-
-The app will launch with the Widget Tree Demo Screen showing interactive examples of state management and reactive updates.
 
 ---
 
