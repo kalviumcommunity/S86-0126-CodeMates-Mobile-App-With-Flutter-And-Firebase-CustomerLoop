@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Widget Tree Demo Screen
 /// This screen demonstrates Flutter's widget tree hierarchy and reactive UI model
-/// 
+///
 /// Widget Tree Structure:
 /// Scaffold
 ///  ┣ AppBar (with title)
@@ -237,7 +237,10 @@ class _WidgetTreeDemoScreenState extends State<WidgetTreeDemoScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: _selectedColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -301,34 +304,37 @@ class _WidgetTreeDemoScreenState extends State<WidgetTreeDemoScreen> {
               spacing: 12,
               runSpacing: 12,
               alignment: WrapAlignment.center,
-              children: _availableColors.map((color) {
-                final isSelected = color == _selectedColor;
-                return GestureDetector(
-                  onTap: () => _changeColor(color),
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Colors.black : Colors.transparent,
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+              children:
+                  _availableColors.map((color) {
+                    final isSelected = color == _selectedColor;
+                    return GestureDetector(
+                      onTap: () => _changeColor(color),
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color:
+                                isSelected ? Colors.black : Colors.transparent,
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
-                        : null,
-                  ),
-                );
-              }).toList(),
+                        child:
+                            isSelected
+                                ? const Icon(Icons.check, color: Colors.white)
+                                : null,
+                      ),
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 12),
             Text(
@@ -373,48 +379,49 @@ class _WidgetTreeDemoScreenState extends State<WidgetTreeDemoScreen> {
               ),
               value: _showExtraWidget,
               onChanged: _toggleWidgetVisibility,
-              activeThumbColor: _selectedColor,
+              thumbColor: WidgetStateProperty.all(_selectedColor),
             ),
             const SizedBox(height: 16),
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
               height: _showExtraWidget ? 120 : 0,
-              child: _showExtraWidget
-                  ? Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _selectedColor.withOpacity(0.3),
-                            _selectedColor.withOpacity(0.1),
-                          ],
+              child:
+                  _showExtraWidget
+                      ? Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              _selectedColor.withOpacity(0.3),
+                              _selectedColor.withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.celebration,
-                              size: 40,
-                              color: _selectedColor,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'I\'m a dynamic widget!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.celebration,
+                                size: 40,
                                 color: _selectedColor,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                'I\'m a dynamic widget!',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: _selectedColor,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
+                      )
+                      : const SizedBox.shrink(),
             ),
             if (_showExtraWidget) const SizedBox(height: 12),
             Text(

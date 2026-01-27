@@ -3,10 +3,20 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/widget_tree_demo_screen.dart';
+import 'screens/debug_tools_demo_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Debug Console demonstration - App initialization log
+  debugPrint('🚀 CustomerLoop App Starting...');
+  debugPrint('🔥 Initializing Firebase...');
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  debugPrint('✅ Firebase initialized successfully');
+  debugPrint('📱 Launching app...');
+
   runApp(const MyApp());
 }
 
@@ -29,9 +39,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const LoginScreen(),
-      // To access Widget Tree Demo: Navigate from any screen or change home temporarily
       routes: {
         '/demo': (context) => const WidgetTreeDemoScreen(),
+        '/debug-demo': (context) => const DebugToolsDemoScreen(),
+        '/login': (context) => const LoginScreen(),
       },
     );
   }

@@ -4,6 +4,7 @@ import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 import 'widget_tree_demo_screen.dart';
 import 'stateless_stateful_demo.dart';
+import 'debug_tools_demo_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -279,8 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const StatelessStatefulDemoScreen(),
+                          builder:
+                              (context) => const StatelessStatefulDemoScreen(),
                         ),
                       );
                     },
@@ -289,6 +290,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.green.shade700,
                       side: BorderSide(color: Colors.green.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Debug Tools Demo Button (Hot Reload, Debug Console, DevTools)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const DebugToolsDemoScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.bug_report),
+                    label: const Text(
+                      'Debug Tools Demo (Hot Reload & DevTools)',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      side: BorderSide(color: Colors.orange.shade300),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
