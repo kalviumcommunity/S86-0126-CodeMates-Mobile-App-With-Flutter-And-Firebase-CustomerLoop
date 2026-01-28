@@ -9,6 +9,8 @@ import 'screens/rewards_screen.dart';
 import 'screens/widget_tree_demo_screen.dart';
 import 'screens/stateless_stateful_demo.dart';
 import 'screens/debug_tools_demo_screen.dart';
+import 'screens/responsive_layout.dart';
+import 'screens/demo_menu_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +59,8 @@ class MyApp extends StatelessWidget {
         '/stateless-stateful-demo': (context) =>
             const StatelessStatefulDemoScreen(),
         '/debug-demo': (context) => const DebugToolsDemoScreen(),
+        '/responsive-layout': (context) => const ResponsiveLayout(),
+        '/demo-menu': (context) => const DemoMenuScreen(),
       },
     );
   }
