@@ -22,6 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _statistics;
   Map<String, dynamic>? _redemptionStats;
   bool _isLoadingStats = true;
+  bool _isGridView = false; // Toggle between grid and list view
 
   @override
   void initState() {
@@ -455,10 +456,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'Recent Customers',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  TextButton.icon(
-                    onPressed: _showAddCustomerDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Customer'),
+                  Row(
+                    children: [
+                      // Toggle view button
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isGridView = !_isGridView;
+                          });
+                        },
+                        icon: Icon(
+                          _isGridView ? Icons.view_list : Icons.grid_view,
+                        ),
+                        tooltip: _isGridView ? 'List View' : 'Grid View',
+                        color: Colors.blue,
+                      ),
+                      TextButton.icon(
+                        onPressed: _showAddCustomerDialog,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Customer'),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -481,123 +499,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   }
 
                   if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Text('Error: ${snapshot.error}'),
-                      ),
+                    // Show demo data when Firebase error occurs
+                    final demoCustomers = _getDemoCustomers();
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange.shade700,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Firebase Connection Issue',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade900,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Showing demo data. Try toggling grid/list view!',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade800,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCustomerView(demoCustomers),
+                      ],
                     );
                   }
 
                   final customers = snapshot.data ?? [];
 
+                  // Show demo data if no real customers exist
+                  final displayCustomers =
+                      customers.isEmpty ? _getDemoCustomers() : customers;
+
                   if (customers.isEmpty) {
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No customers yet',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
+                    // Show banner explaining demo data
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.shade700,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Add your first customer to start building loyalty!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Showing demo data. Add your first customer to see real data!',
+                                  style: TextStyle(
+                                    color: Colors.blue.shade900,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: _showAddCustomerDialog,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add First Customer'),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        _buildCustomerView(displayCustomers),
+                      ],
                     );
                   }
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: customers.length,
-                    itemBuilder: (context, index) {
-                      final customer = customers[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              customer.name[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            customer.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            '${customer.phone} • ${customer.visits} visits • ${customer.points} pts',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (customer.visits > 1)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.star,
-                                        size: 12,
-                                        color: Colors.green[700],
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Loyal',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.green[700],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right),
-                            ],
-                          ),
-                          onTap: () => _showCustomerDetails(customer),
-                        ),
-                      );
-                    },
-                  );
+                  return _buildCustomerView(displayCustomers);
                 },
               ),
             ],
@@ -650,5 +643,271 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  // Generate demo customers for display when no real data exists
+  List<Customer> _getDemoCustomers() {
+    return [
+      Customer(
+        id: 'demo1',
+        name: 'Sarah Johnson',
+        phone: '+1 (555) 123-4567',
+        email: 'sarah.j@example.com',
+        visits: 5,
+        points: 50,
+        lastVisit: DateTime.now().subtract(const Duration(days: 2)),
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Customer(
+        id: 'demo2',
+        name: 'Michael Chen',
+        phone: '+1 (555) 234-5678',
+        email: 'michael.c@example.com',
+        visits: 3,
+        points: 30,
+        lastVisit: DateTime.now().subtract(const Duration(days: 5)),
+        createdAt: DateTime.now().subtract(const Duration(days: 45)),
+      ),
+      Customer(
+        id: 'demo3',
+        name: 'Emily Davis',
+        phone: '+1 (555) 345-6789',
+        email: 'emily.d@example.com',
+        visits: 8,
+        points: 80,
+        lastVisit: DateTime.now().subtract(const Duration(days: 1)),
+        createdAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      Customer(
+        id: 'demo4',
+        name: 'James Wilson',
+        phone: '+1 (555) 456-7890',
+        visits: 2,
+        points: 20,
+        lastVisit: DateTime.now().subtract(const Duration(days: 10)),
+        createdAt: DateTime.now().subtract(const Duration(days: 20)),
+      ),
+      Customer(
+        id: 'demo5',
+        name: 'Lisa Anderson',
+        phone: '+1 (555) 567-8901',
+        email: 'lisa.a@example.com',
+        visits: 12,
+        points: 120,
+        lastVisit: DateTime.now(),
+        createdAt: DateTime.now().subtract(const Duration(days: 90)),
+      ),
+      Customer(
+        id: 'demo6',
+        name: 'David Martinez',
+        phone: '+1 (555) 678-9012',
+        visits: 4,
+        points: 40,
+        lastVisit: DateTime.now().subtract(const Duration(days: 7)),
+        createdAt: DateTime.now().subtract(const Duration(days: 35)),
+      ),
+    ];
+  }
+
+  // Build customer view based on current view mode
+  Widget _buildCustomerView(List<Customer> customers) {
+    return _isGridView
+        ? GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 0.72, // Adjusted for better fit
+          ),
+          itemCount: customers.length,
+          itemBuilder: (context, index) {
+            final customer = customers[index];
+            return Card(
+              child: InkWell(
+                onTap: () => _showCustomerDetails(customer),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        radius: 30,
+                        child: Text(
+                          customer.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        customer.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        customer.phone,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              Text(
+                                '${customer.visits}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              Text(
+                                'Visits',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                '${customer.points}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              Text(
+                                'Points',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (customer.visits > 1)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star,
+                                size: 12,
+                                color: Colors.green[700],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Loyal',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        )
+        : ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: customers.length,
+          itemBuilder: (context, index) {
+            final customer = customers[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Text(
+                    customer.name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  customer.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${customer.phone} • ${customer.visits} visits • ${customer.points} pts',
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (customer.visits > 1)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 12,
+                              color: Colors.green[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Loyal',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
+                onTap: () => _showCustomerDetails(customer),
+              ),
+            );
+          },
+        );
   }
 }
