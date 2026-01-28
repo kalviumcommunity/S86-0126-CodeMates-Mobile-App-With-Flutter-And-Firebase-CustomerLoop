@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/rewards_screen.dart';
 import 'screens/widget_tree_demo_screen.dart';
+import 'screens/stateless_stateful_demo.dart';
 import 'screens/debug_tools_demo_screen.dart';
 
 void main() async {
@@ -38,11 +43,20 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginScreen(),
+      // Initial route - app starts at login screen
+      initialRoute: '/',
+      // Named routes for multi-screen navigation
       routes: {
-        '/demo': (context) => const WidgetTreeDemoScreen(),
-        '/debug-demo': (context) => const DebugToolsDemoScreen(),
+        '/': (context) => const LoginScreen(),
         '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
+        '/rewards': (context) => const RewardsScreen(),
+        '/widget-tree-demo': (context) => const WidgetTreeDemoScreen(),
+        '/stateless-stateful-demo': (context) =>
+            const StatelessStatefulDemoScreen(),
+        '/debug-demo': (context) => const DebugToolsDemoScreen(),
       },
     );
   }
