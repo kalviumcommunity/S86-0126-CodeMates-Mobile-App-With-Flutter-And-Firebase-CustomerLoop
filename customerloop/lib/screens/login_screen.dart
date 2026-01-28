@@ -5,6 +5,7 @@ import 'dashboard_screen.dart';
 import 'widget_tree_demo_screen.dart';
 import 'stateless_stateful_demo.dart';
 import 'debug_tools_demo_screen.dart';
+import 'scrollable_views.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -311,6 +312,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange.shade700,
                       side: BorderSide(color: Colors.orange.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Scrollable Views Demo Button (ListView & GridView)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ScrollableViews(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.view_list),
+                    label: const Text('View Scrollable Views Demo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.purple.shade700,
+                      side: BorderSide(color: Colors.purple.shade300),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
