@@ -448,6 +448,134 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 24),
 
+              // Quick access: Scrollable Views demo (ListView + GridView)
+              Card(
+                elevation: 1,
+                child: ListTile(
+                  leading: const Icon(Icons.view_agenda, color: Colors.blue),
+                  title: const Text('Scrollable Views Demo'),
+                  subtitle: const Text('See ListView and GridView examples'),
+                  trailing: ElevatedButton(
+                    onPressed:
+                        () => Navigator.pushNamed(context, '/scrollable-views'),
+                    child: const Text('Open'),
+                  ),
+                  onTap:
+                      () => Navigator.pushNamed(context, '/scrollable-views'),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Embedded Scrollable Views using existing customer demo data
+              const Text(
+                'Scrollable Views (Preview)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              // Horizontal ListView of highlighted customers
+              Container(
+                height: 140,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _getDemoCustomers().length,
+                  itemBuilder: (context, index) {
+                    final c = _getDemoCustomers()[index];
+                    return Container(
+                      width: 220,
+                      margin: const EdgeInsets.only(right: 12),
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Text(c.name[0].toUpperCase()),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      c.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      c.phone,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              // GridView preview of customer tiles
+              Container(
+                height: 220,
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemCount: _getDemoCustomers().length,
+                  itemBuilder: (context, index) {
+                    final c = _getDemoCustomers()[index];
+                    return InkWell(
+                      onTap: () => _showCustomerDetails(c),
+                      child: Card(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              child: Text(c.name[0].toUpperCase()),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              c.name.split(' ').first,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${c.points} pts',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
               // Recent Customers Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
