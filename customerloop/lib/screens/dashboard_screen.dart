@@ -13,6 +13,18 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+// StatefulWidget: DashboardScreen maintains state for customer data, statistics, and UI toggles
+// Widget Tree Structure:
+// DashboardScreen (StatefulWidget)
+//   └─ _DashboardScreenState (State)
+//      └─ Scaffold
+//         ├─ AppBar (with search TextField)
+//         ├─ SingleChildScrollView
+//         │  └─ Column
+//         │     ├─ GridView (Statistics cards)
+//         │     ├─ StreamBuilder (Real-time customer list)
+//         │     │  └─ ListView.builder OR GridView.builder (Toggle view)
+//         └─ FloatingActionButton (Add customer)
 class _DashboardScreenState extends State<DashboardScreen> {
   final _authService = AuthService();
   final _customerService = CustomerService();
@@ -27,6 +39,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Debug logging: Track dashboard initialization
+    debugPrint('🎯 Dashboard Screen initialized');
+    debugPrint('📊 Loading customer statistics...');
     _loadStatistics();
   }
 
@@ -40,10 +55,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = _authService.currentUser;
     if (user != null) {
       try {
+        debugPrint('👤 User ID: ${user.uid}');
         final stats = await _customerService.getStatistics(user.uid);
         final redemptionStats = await _rewardsService.getRedemptionStats(
           user.uid,
         );
+        debugPrint('✅ Statistics loaded: ${stats.toString()}');
         if (mounted) {
           setState(() {
             _statistics = stats;
@@ -52,12 +69,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         }
       } catch (e) {
+        debugPrint('❌ Error loading statistics: $e');
         if (mounted) {
           setState(() {
             _isLoadingStats = false;
           });
         }
       }
+    } else {
+      debugPrint('⚠️ No user found');
     }
   }
 
@@ -141,6 +161,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   try {
                     final user = _authService.currentUser;
                     if (user != null) {
+                      debugPrint(
+                        '➕ Adding new customer: ${nameController.text}',
+                      );
                       await _customerService.addCustomer(user.uid, {
                         'name': nameController.text.trim(),
                         'phone': phoneController.text.trim(),
@@ -149,6 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ? null
                                 : emailController.text.trim(),
                       });
+                      debugPrint('✅ Customer added successfully');
 
                       if (mounted) {
                         Navigator.pop(context);
@@ -161,6 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                     }
                   } catch (e) {
+                    debugPrint('❌ Error adding customer: $e');
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to add customer: $e')),
@@ -309,30 +334,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CustomerLoop Dashboard'),
-        elevation: 0,
+        title: const Text('CustomerLoop'),
+        elevation: 1,
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.card_giftcard),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const RewardsScreen()),
-              );
-            },
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RewardsScreen(),
+                  ),
+                ),
             tooltip: 'Rewards Catalog',
           ),
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search feature coming soon!')),
-              );
-            },
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Logout',
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: SizedBox(
+              height: 48,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search customers, phone or email',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onSubmitted: (v) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Search not implemented in demo'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadStatistics,
@@ -447,134 +502,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
 
               const SizedBox(height: 24),
-
-              // Quick access: Scrollable Views demo (ListView + GridView)
-              Card(
-                elevation: 1,
-                child: ListTile(
-                  leading: const Icon(Icons.view_agenda, color: Colors.blue),
-                  title: const Text('Scrollable Views Demo'),
-                  subtitle: const Text('See ListView and GridView examples'),
-                  trailing: ElevatedButton(
-                    onPressed:
-                        () => Navigator.pushNamed(context, '/scrollable-views'),
-                    child: const Text('Open'),
-                  ),
-                  onTap:
-                      () => Navigator.pushNamed(context, '/scrollable-views'),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Embedded Scrollable Views using existing customer demo data
-              const Text(
-                'Scrollable Views (Preview)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              // Horizontal ListView of highlighted customers
-              Container(
-                height: 140,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _getDemoCustomers().length,
-                  itemBuilder: (context, index) {
-                    final c = _getDemoCustomers()[index];
-                    return Container(
-                      width: 220,
-                      margin: const EdgeInsets.only(right: 12),
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Text(c.name[0].toUpperCase()),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      c.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      c.phone,
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              // GridView preview of customer tiles
-              Container(
-                height: 220,
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: _getDemoCustomers().length,
-                  itemBuilder: (context, index) {
-                    final c = _getDemoCustomers()[index];
-                    return InkWell(
-                      onTap: () => _showCustomerDetails(c),
-                      child: Card(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.blue,
-                              child: Text(c.name[0].toUpperCase()),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              c.name.split(' ').first,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${c.points} pts',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
 
               // Recent Customers Section
               Row(
@@ -739,36 +666,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
     IconData icon,
     Color color,
   ) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ),
-                Icon(icon, color: color, size: 24),
-              ],
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.12), Colors.white],
         ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
+              ),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: color,
+                child: Icon(icon, color: Colors.white, size: 18),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

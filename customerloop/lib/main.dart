@@ -6,10 +6,6 @@ import 'screens/signup_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/rewards_screen.dart';
-import 'screens/widget_tree_demo_screen.dart';
-import 'screens/stateless_stateful_demo.dart';
-import 'screens/debug_tools_demo_screen.dart';
-import 'screens/scrollable_views.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,11 +50,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/rewards': (context) => const RewardsScreen(),
-        '/widget-tree-demo': (context) => const WidgetTreeDemoScreen(),
-        '/stateless-stateful-demo':
-            (context) => const StatelessStatefulDemoScreen(),
-        '/debug-demo': (context) => const DebugToolsDemoScreen(),
-        '/scrollable-views': (context) => ScrollableViews(),
       },
     );
   }
