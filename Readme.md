@@ -284,6 +284,81 @@ The **Responsive Home Screen** demonstrates advanced Flutter responsive design:
 
 ---
 
+## **State Management with setState**
+
+- **File added:** `customerloop/lib/screens/state_management_demo.dart`
+
+This small demo shows local UI state management using a `StatefulWidget` and the `setState()` method. The counter increments and decrements, and the screen background changes color when the count reaches a threshold.
+
+Code snippet (core `setState` usage):
+
+```dart
+void _incrementCounter() {
+  setState(() {
+    _counter++;
+  });
+}
+
+void _decrementCounter() {
+  setState(() {
+    if (_counter > 0) _counter--;
+  });
+}
+```
+
+Conditional UI based on local state (background color change):
+
+```dart
+Container(
+  color: _counter >= 5 ? Colors.greenAccent : Colors.white,
+  child: Center(child: Text('Count: $_counter')),
+)
+```
+
+Screenshots
+- Add two screenshots to `customerloop/screenshots/`: `state_before.png` and `state_after.png` showing the UI before and after reaching the threshold. Insert them here or attach in your PR.
+
+Reflection
+- **Stateless vs Stateful:** `StatelessWidget` has no mutable state and renders static content. `StatefulWidget` holds mutable state in a separate `State` object that can change over time.
+- **Why `setState()` matters:** Calling `setState()` tells Flutter that the widget's internal state changed and the framework should schedule a rebuild. Without it, UI will not update.
+- **Performance caveats:** Overusing `setState()` or calling it unnecessarily can trigger extra rebuilds. Keep the widget tree small, lift state up when appropriate, and consider finer-grained state management for complex apps.
+
+How to run the demo
+1. From project root run:
+
+```bash
+cd customerloop
+flutter pub get
+flutter run
+```
+
+2. Navigate to the screen by pushing `StateManagementDemo` from any existing route, for example in `main.dart` add a route:
+
+```dart
+routes: {
+  '/state-demo': (ctx) => const StateManagementDemo(),
+},
+```
+
+Submission / PR instructions
+- Commit message: `feat: implemented local state management using setState`
+- PR title: `[Sprint-2] State Management with setState – TeamName`
+- PR description should include:
+  - Summary of what was implemented
+  - Screenshots (`state_before.png`, `state_after.png`) or links
+  - A short reflection (answer the three reflection bullets above)
+  - Video demo link (1–2 minutes) showing real-time updates and explanation of how `setState()` triggers rebuilds. Ensure the shared link is set to "Anyone with the link".
+
+Video demo guidance
+- Record a 1–2 minute video demonstrating:
+  - Counter increment/decrement
+  - Background color change at threshold
+  - Brief explanation of how `setState()` updates the UI
+- Upload to Google Drive, Loom, or YouTube (unlisted) and add the link to the PR description.
+
+If you want, I can also create a simple Git branch, commit, and push these changes and open the PR draft for you — tell me the remote name and preferred branch name.
+
+
 ## 📱 Responsive Design Implementation
 
 ### 🔍 MediaQuery Usage
