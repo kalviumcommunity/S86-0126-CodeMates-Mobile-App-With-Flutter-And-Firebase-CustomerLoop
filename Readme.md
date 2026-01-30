@@ -361,6 +361,20 @@ If you want, I can also create a simple Git branch, commit, and push these chang
 
 ## 📱 Responsive Design Implementation
 
+### Responsive Dashboard
+
+The Responsive Dashboard demonstrates Flutter responsive design using MediaQuery and LayoutBuilder to ensure the UI adapts seamlessly across phones, tablets, and desktops. The layout dynamically switches between single and multi-column views, scales spacing and typography, and prevents overflow, delivering a consistent user experience on all screen sizes.
+
+The Responsive Home Screen demonstrates advanced Flutter responsive design:
+-  MediaQuery for dynamic screen size detection
+-  Adaptive Layouts – Single column (phone), Multi-column (tablet/desktop)
+-  Flexible & Expanded Widgets for scalable UI components
+-  GridView with dynamic column count based on device type
+-  LayoutBuilder for constraint-based rendering
+-  Wrap Widget for responsive button arrangements
+-  FittedBox to prevent text overflow
+-  Portrait & Landscape orientation support
+
 ### 🔍 MediaQuery Usage
 
 We use `MediaQuery` to detect screen dimensions and adapt the UI dynamically:
