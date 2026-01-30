@@ -3,6 +3,9 @@ import '../services/auth_service.dart';
 import '../services/customer_service.dart';
 import '../services/rewards_service.dart';
 import '../models/customer_model.dart';
+import '../widgets/stat_card.dart';
+import '../widgets/toggle_view_button.dart';
+import '../widgets/customer_card.dart';
 import 'login_screen.dart';
 import 'rewards_screen.dart';
 
@@ -468,35 +471,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.3,
                   children: [
-                    _buildStatCard(
-                      'Total Customers',
-                      '${_statistics?['totalCustomers'] ?? 0}',
-                      Icons.people,
-                      Colors.blue,
+                    // Using custom StatCard widget for consistent statistics display
+                    StatCard(
+                      title: 'Total Customers',
+                      value: '${_statistics?['totalCustomers'] ?? 0}',
+                      icon: Icons.people,
+                      color: Colors.blue,
                     ),
-                    _buildStatCard(
-                      'Repeat Customers',
-                      '${_statistics?['repeatCustomers'] ?? 0}',
-                      Icons.repeat,
-                      Colors.green,
+                    StatCard(
+                      title: 'Repeat Customers',
+                      value: '${_statistics?['repeatCustomers'] ?? 0}',
+                      icon: Icons.repeat,
+                      color: Colors.green,
                     ),
-                    _buildStatCard(
-                      'Rewards Redeemed',
-                      '${_redemptionStats?['totalRedemptions'] ?? 0}',
-                      Icons.redeem,
-                      Colors.orange,
+                    StatCard(
+                      title: 'Rewards Redeemed',
+                      value: '${_redemptionStats?['totalRedemptions'] ?? 0}',
+                      icon: Icons.redeem,
+                      color: Colors.orange,
                     ),
-                    _buildStatCard(
-                      'Total Visits',
-                      '${_statistics?['totalVisits'] ?? 0}',
-                      Icons.trending_up,
-                      Colors.orange,
+                    StatCard(
+                      title: 'Total Visits',
+                      value: '${_statistics?['totalVisits'] ?? 0}',
+                      icon: Icons.trending_up,
+                      color: Colors.orange,
                     ),
-                    _buildStatCard(
-                      'Avg Visits/Customer',
-                      _statistics?['avgVisitsPerCustomer'] ?? '0',
-                      Icons.bar_chart,
-                      Colors.purple,
+                    StatCard(
+                      title: 'Avg Visits/Customer',
+                      value: _statistics?['avgVisitsPerCustomer'] ?? '0',
+                      icon: Icons.bar_chart,
+                      color: Colors.purple,
                     ),
                   ],
                 ),
@@ -513,18 +517,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-                      // Toggle view button
-                      IconButton(
-                        onPressed: () {
+                      // Using custom ToggleViewButton widget
+                      ToggleViewButton(
+                        initialValue: _isGridView,
+                        onChanged: (value) {
                           setState(() {
-                            _isGridView = !_isGridView;
+                            _isGridView = value;
                           });
                         },
-                        icon: Icon(
-                          _isGridView ? Icons.view_list : Icons.grid_view,
-                        ),
-                        tooltip: _isGridView ? 'List View' : 'Grid View',
-                        color: Colors.blue,
                       ),
                       TextButton.icon(
                         onPressed: _showAddCustomerDialog,
@@ -660,61 +660,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.12), Colors.white],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                ),
-              ),
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: color,
-                child: Icon(icon, color: Colors.white, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Generate demo customers for display when no real data exists
   List<Customer> _getDemoCustomers() {
     return [
@@ -779,7 +724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
   }
 
-  // Build customer view based on current view mode
+  // Build customer view based on current view mode using custom CustomerCard widget
   Widget _buildCustomerView(List<Customer> customers) {
     return _isGridView
         ? GridView.builder(
@@ -789,126 +734,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 0.72, // Adjusted for better fit
+            childAspectRatio: 0.75,
           ),
           itemCount: customers.length,
           itemBuilder: (context, index) {
             final customer = customers[index];
-            return Card(
-              child: InkWell(
-                onTap: () => _showCustomerDetails(customer),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 30,
-                        child: Text(
-                          customer.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        customer.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        customer.phone,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Column(
-                            children: [
-                              Text(
-                                '${customer.visits}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              Text(
-                                'Visits',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Text(
-                                '${customer.points}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                              Text(
-                                'Points',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if (customer.visits > 1)
-                        Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.star,
-                                size: 12,
-                                color: Colors.green[700],
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Loyal',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.green[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+            // Using custom CustomerCard widget in extended (grid) mode
+            return CustomerCard(
+              customer: customer,
+              isCompact: false,
+              onTap: () => _showCustomerDetails(customer),
             );
           },
         )
@@ -918,64 +753,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           itemCount: customers.length,
           itemBuilder: (context, index) {
             final customer = customers[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.blue,
-                  child: Text(
-                    customer.name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                title: Text(
-                  customer.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  '${customer.phone} • ${customer.visits} visits • ${customer.points} pts',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (customer.visits > 1)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 12,
-                              color: Colors.green[700],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Loyal',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right),
-                  ],
-                ),
-                onTap: () => _showCustomerDetails(customer),
-              ),
+            // Using custom CustomerCard widget in compact (list) mode
+            return CustomerCard(
+              customer: customer,
+              isCompact: true,
+              onTap: () => _showCustomerDetails(customer),
             );
           },
         );
