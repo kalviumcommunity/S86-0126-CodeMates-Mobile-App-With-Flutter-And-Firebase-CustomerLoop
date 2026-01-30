@@ -637,6 +637,20 @@ FittedBox(
 
 ---
 
+## 🖼️ Asset Management in Flutter
+
+This section focuses on managing local assets such as images and icons in Flutter. The goal is to correctly organize asset folders, register them in `pubspec.yaml`, and display them in the UI using `Image.asset` and Flutter’s built-in `Icon` widgets. Proper asset management ensures clean project structure, prevents runtime errors, and supports scalable UI development.
+
+Key concepts implemented:
+-  Organized asset folders (`assets/images`, `assets/icons`)
+-  Asset registration in `pubspec.yaml`
+-  Displaying local images using `Image.asset`
+-  Using Material and Cupertino icons
+-  Combining images and icons in UI layouts
+-  Handling common asset errors (paths, YAML indentation, hot reload)
+-  Testing assets across different screen sizes
+
+
 ## 📝 User Input & Form Validation
 
 ### Why Input Validation is Critical in Mobile Apps
