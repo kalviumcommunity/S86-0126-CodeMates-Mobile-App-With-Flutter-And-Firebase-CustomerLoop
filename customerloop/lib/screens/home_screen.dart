@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/custom_button.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -109,11 +110,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
-              TextButton(
+              CustomButton(
+                label: 'Cancel',
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                isOutlined: true,
               ),
-              ElevatedButton(
+              const SizedBox(width: 8),
+              CustomButton(
+                label: note == null ? 'Add' : 'Update',
                 onPressed: () async {
                   if (_titleController.text.isNotEmpty) {
                     final user = _authService.currentUser;
@@ -156,7 +160,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
                 },
-                child: Text(note == null ? 'Add' : 'Update'),
               ),
             ],
           ),
