@@ -60,9 +60,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       try {
         debugPrint('👤 User ID: ${user.uid}');
         final stats = await _customerService.getStatistics(user.uid);
-        final redemptionStats = await _rewardsService.getRedemptionStats(
-          user.uid,
-        );
+        
+        // Try to get redemption stats, but don't fail if permissions are missing
+        Map<String, dynamic>? redemptionStats;
+        try {
+          redemptionStats = await _rewardsService.getRedemptionStats(user.uid);
+        } catch (e) {
+          debugPrint('⚠️ Could not load redemption stats (permission denied): $e');
+          // Set default values if redemption stats fail
+          redemptionStats = {'totalRedemptions': 0};
+        }
+        
         debugPrint('✅ Statistics loaded: ${stats.toString()}');
         if (mounted) {
           setState(() {
@@ -346,8 +354,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed:
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const RewardsScreen(),
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const RewardsScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+                            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                          ),
+                          child: child,
+                        ),
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 400),
                   ),
                 ),
             tooltip: 'Rewards Catalog',
@@ -463,14 +483,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 )
               else
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.3,
-                  children: [
+                AnimatedOpacity(
+                  opacity: _isLoadingStats ? 0.0 : 1.0,
+                  duration: const Duration(milliseconds: 600),
+                  child: AnimatedScale(
+                    scale: _isLoadingStats ? 0.9 : 1.0,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.3,
+                      children: [
                     // Using custom StatCard widget for consistent statistics display
                     StatCard(
                       title: 'Total Customers',
@@ -503,6 +530,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Colors.purple,
                     ),
                   ],
+                ),
+                  ),
                 ),
 
               const SizedBox(height: 24),

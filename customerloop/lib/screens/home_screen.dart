@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final _authService = AuthService();
   final _firestoreService = FirestoreService();
   final _titleController = TextEditingController();
@@ -20,15 +20,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _userName;
   String? _userEmail;
+  
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+    );
+    _fadeController.forward();
     _loadUserData();
   }
 
   @override
   void dispose() {
+    _fadeController.dispose();
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
@@ -62,7 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
       await _authService.logout();
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
         );
       }
     } catch (e) {
