@@ -40,6 +40,34 @@ Firebase ensures **secure authentication** and **real-time data synchronization*
   - Scalable infrastructure
 
 This combination allows rapid MVP development with reliable performance.
+---
+
+## 🔐 Firebase Authentication (Email & Password)
+
+Implemented **Firebase Authentication** to enable secure user signup and login for shop owners in Customer Loop.
+
+### What We Implemented
+- Email & Password based signup
+- Secure login flow
+- Authentication state handling using `authStateChanges()`
+- Logout functionality
+- Error handling for invalid email and weak passwords
+
+### How We Implemented It
+- Integrated Firebase Auth with Flutter using `firebase_auth` and `firebase_core`
+- Initialized Firebase in `main.dart`
+- Created login/signup UI with form validation
+- Used `createUserWithEmailAndPassword()` for registration
+- Used `signInWithEmailAndPassword()` for login
+- Verified registered users in Firebase Console
+- Managed user sessions using Firebase’s built-in auth state listener
+
+### Challenges Faced
+- Firebase initialization errors during app startup  
+- Dependency version mismatches  
+- Handling async authentication inside Flutter UI  
+
+These issues were resolved by proper Firebase setup, aligning package versions, and structured state handling.
 
 ---
 
