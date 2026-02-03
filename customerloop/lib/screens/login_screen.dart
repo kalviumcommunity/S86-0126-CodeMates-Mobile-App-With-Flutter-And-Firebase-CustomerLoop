@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'signup_screen.dart';
-import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,30 +56,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = true);
 
     try {
-      final user = await _authService.login(
+      await _authService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
-      if (user != null && mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOut,
-                )),
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 500),
+      // Login successful - authStateChanges() will handle navigation automatically
+      if (mounted) {
+        debugPrint('✅ Login successful - StreamBuilder will auto-navigate to DashboardScreen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(milliseconds: 1500),
           ),
         );
+        // Clear fields after successful login
+        _emailController.clear();
+        _passwordController.clear();
       }
     } catch (e) {
       if (mounted) {

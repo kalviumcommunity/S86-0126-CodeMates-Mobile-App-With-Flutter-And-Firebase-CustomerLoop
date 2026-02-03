@@ -6,7 +6,6 @@ import '../models/customer_model.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/toggle_view_button.dart';
 import '../widgets/customer_card.dart';
-import 'login_screen.dart';
 import 'rewards_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -95,16 +94,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _logout() async {
     try {
       await _authService.logout();
+      // Logout successful - authStateChanges() will handle navigation automatically to LoginScreen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        debugPrint('✅ Logout successful - StreamBuilder will auto-navigate to LoginScreen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(milliseconds: 1500),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logout failed: $e')),
+        );
       }
     }
   }
