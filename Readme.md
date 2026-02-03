@@ -43,6 +43,81 @@ This combination allows rapid MVP development with reliable performance.
 
 ---
 
+## 🔐 Firebase Authentication (Email & Password)
+
+In this assignment, we implemented **Firebase Authentication** to enable secure user signup and login for shop owners in Customer Loop.
+
+### ✅ What We Implemented
+- Email & Password based signup
+- Secure login flow
+- Authentication state handling using `authStateChanges()`
+- Logout functionality
+- Error handling for invalid email and weak passwords
+
+### ⚙️ How We Implemented It
+- Integrated Firebase Auth with Flutter using `firebase_auth` and `firebase_core`
+- Initialized Firebase in `main.dart`
+- Created login/signup UI with form validation
+- Used `createUserWithEmailAndPassword()` for registration
+- Used `signInWithEmailAndPassword()` for login
+- Verified registered users in Firebase Console
+- Managed user sessions using Firebase’s built-in auth state listener
+
+### ⚠️ Challenges Faced
+- Firebase initialization errors during app startup  
+- Dependency version mismatches  
+- Handling async authentication inside Flutter UI  
+
+These issues were resolved by proper Firebase setup, aligning package versions, and structured state handling.
+
+---
+
+## 🔐 Firebase Auth – Sign Up, Login & Logout Flow
+
+In this assignment, we implemented a complete authentication flow using **Firebase Authentication** in Flutter, including **Sign Up, Login, and Logout**, with automatic screen transitions based on user session state.
+
+### ✅ What We Implemented
+- Email & Password based Sign Up
+- Secure Login for existing users
+- Logout functionality
+- Real-time authentication state handling using `authStateChanges()`
+- Automatic navigation between AuthScreen and HomeScreen
+- Error handling for invalid email, weak passwords, and wrong credentials
+
+### ⚙️ How We Implemented It
+- Integrated `firebase_core` and `firebase_auth`
+- Initialized Firebase in `main.dart`
+- Used `StreamBuilder` with `FirebaseAuth.instance.authStateChanges()` to control navigation:
+  - If user exists → HomeScreen
+  - If user is null → AuthScreen
+- Built `AuthScreen` for signup/login using:
+  - `createUserWithEmailAndPassword()`
+  - `signInWithEmailAndPassword()`
+- Built `HomeScreen` for logged-in users with logout using:
+  - `FirebaseAuth.instance.signOut()`
+- Verified registered users in Firebase Console
+- Added SnackBars for success and error feedback
+
+### 🔄 Authentication Flow
+- User signs up → Account created in Firebase
+- User logs in → Session becomes active
+- App listens to auth state → Navigates to HomeScreen
+- User logs out → Session cleared → Returns to AuthScreen automatically
+
+### ⚠️ Challenges Faced
+- Managing async authentication inside Flutter UI
+- Firebase initialization issues
+- Handling navigation without manual routes
+- Dependency version mismatches
+
+These were resolved using StreamBuilder for auth state, proper Firebase setup, and structured UI logic.
+
+### 💭 Reflection
+- The hardest part was handling real-time navigation using `authStateChanges()`.
+- `StreamBuilder` simplified routing by automatically switching screens based on login state.
+- Logout is essential to clear active sessions and prevent unauthorized access.
+
+
 ## 📦 Scope & Boundaries
 
 ### ✅ In Scope
