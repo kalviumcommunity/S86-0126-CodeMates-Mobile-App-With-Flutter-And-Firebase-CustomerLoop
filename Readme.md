@@ -145,6 +145,22 @@ These were resolved using StreamBuilder for auth state, proper Firebase setup, a
 - `StreamBuilder` simplified routing by automatically switching screens based on login state.
 - Logout is essential to clear active sessions and prevent unauthorized access.
 
+---
+
+## 🔐 Latest Assignment: Persistent Login & Auto-Login
+
+### ✅ Implemented Features
+- StreamBuilder in `main.dart` listens to `authStateChanges()` for automatic routing
+- Persistent login across app restarts using Firebase session management
+- Auto-login flow eliminates manual navigation after authentication
+- SplashScreen displays during Firebase auth verification
+- Removed manual Navigator calls from all auth screens
+- Fixed lint errors - removed unused imports and variables
+
+### 🔄 Flow: App Start → Firebase checks session → StreamBuilder routes to SplashScreen/DashboardScreen/LoginScreen
+
+### 📁 Modified: `main.dart`, `splash_screen.dart` (new), `login_screen.dart`, `signup_screen.dart`, `dashboard_screen.dart`, `home_screen.dart`
+
 
 ## 📦 Scope & Boundaries
 

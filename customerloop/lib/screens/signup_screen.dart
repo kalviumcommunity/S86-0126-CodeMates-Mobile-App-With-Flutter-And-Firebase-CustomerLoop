@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
-import 'dashboard_screen.dart';
 import 'login_screen.dart';
 
 // StatefulWidget: SignupScreen maintains state for multiple form inputs and password visibility toggles
@@ -80,9 +79,20 @@ class _SignupScreenState extends State<SignupScreen> {
         debugPrint('✅ User data saved successfully');
 
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          // Signup successful - authStateChanges() will handle navigation automatically
+          debugPrint('✅ Signup successful - StreamBuilder will auto-navigate to DashboardScreen');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(milliseconds: 1500),
+            ),
           );
+          // Clear fields after successful signup
+          _nameController.clear();
+          _emailController.clear();
+          _passwordController.clear();
+          _confirmPasswordController.clear();
         }
       }
     } catch (e) {
