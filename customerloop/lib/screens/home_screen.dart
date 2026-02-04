@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final _authService = AuthService();
   final _firestoreService = FirestoreService();
   final _titleController = TextEditingController();
@@ -20,23 +20,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   String? _userName;
   String? _userEmail;
-  
-  late AnimationController _fadeController;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _fadeController.forward();
     _loadUserData();
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
@@ -68,15 +60,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _handleLogout() async {
     try {
       await _authService.logout();
-      // Logout successful - authStateChanges() will handle navigation automatically to LoginScreen
       if (mounted) {
-        debugPrint('✅ Logout successful - StreamBuilder will auto-navigate to LoginScreen');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logged out successfully!'),
-            backgroundColor: Colors.green,
-            duration: Duration(milliseconds: 1500),
-          ),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     } catch (e) {
