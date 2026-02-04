@@ -1304,6 +1304,778 @@ The denormalization strategy (storing `customerName` and `rewardName` in redempt
 
 The design process emphasized **pragmatism over perfection** — choosing patterns that work well for a loyalty app's specific access patterns while remaining flexible for future growth.
 
+### Assignment 3.32: Reading Data from Firestore Collections and Documents
+
+This section demonstrates how the Customer Loop app reads data from Cloud Firestore using the `cloud_firestore` package. The app implements both real-time streams and one-time reads to display dynamic, live-updating data across all screens.
+
+#### Firestore Read Operations Implemented
+
+The app uses all four main Firestore read patterns:
+
+1. **Real-time Streams** (primary method) - Auto-updating UI
+2. **Single Document Reads** - One-time data fetches
+3. **Collection Queries** - Batch data retrieval
+4. **Filtered Queries** - Conditional data access
+
+#### Dependencies
+
+**pubspec.yaml:**
+```yaml
+dependencies:
+  cloud_firestore: ^5.6.12
+```
+
+Firestore is initialized in `main.dart` before app launch:
+```dart
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+```
+
+---
+
+#### Implementation Examples
+
+##### 1. Real-Time Stream: Customer List
+
+**Location**: [customer_service.dart](lib/services/customer_service.dart)
+
+**Code:**
+```dart
+/// Get all customers for a business with real-time updates
+Stream<List<Customer>> getCustomersStream(String businessId) {
+  return _firestore
+      .collection(customersCollection)
+      .where('businessId', isEqualTo: businessId)
+      .orderBy('lastVisit', descending: true)
+      .snapshots()
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+      );
+}
+```
+
+**UI Implementation** ([dashboard_screen.dart](lib/screens/dashboard_screen.dart)):
+```dart
+StreamBuilder<List<Customer>>(
+  stream: _customerService.getCustomersStream(user.uid),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Center(child: Text('Error: ${snapshot.error}'));
+    }
+
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const Center(
+        child: Text('No customers yet. Add your first customer!'),
+      );
+    }
+
+    final customers = snapshot.data!;
+    return ListView.builder(
+      itemCount: customers.length,
+      itemBuilder: (context, index) {
+        final customer = customers[index];
+        return CustomerCard(customer: customer);
+      },
+    );
+  },
+)
+```
+
+**Benefits:**
+- ✅ UI updates automatically when Firestore changes
+- ✅ No manual refresh needed
+- ✅ Multiple users see updates instantly
+- ✅ Sorted by most recent visit
+
+---
+
+##### 2. Filtered Query: Active Rewards
+
+**Location**: [rewards_service.dart](lib/services/rewards_service.dart)
+
+**Code:**
+```dart
+/// Get all active rewards for a business (filtered by isActive)
+Stream<List<Reward>> getRewardsStream(String businessId) {
+  return _firestore
+      .collection(rewardsCollection)
+      .where('businessId', isEqualTo: businessId)
+      .where('isActive', isEqualTo: true)  // Filter condition
+      .orderBy('pointsCost')               // Sort by cost
+      .snapshots()
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+      );
+}
+```
+
+**UI Implementation** ([rewards_screen.dart](lib/screens/rewards_screen.dart)):
+```dart
+StreamBuilder<List<Reward>>(
+  stream: _rewardsService.getRewardsStream(user.uid),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final rewards = snapshot.data!;
+    
+    if (rewards.isEmpty) {
+      return const Center(child: Text('No rewards available'));
+    }
+
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.8,
+      ),
+      itemCount: rewards.length,
+      itemBuilder: (context, index) {
+        final reward = rewards[index];
+        return RewardCard(reward: reward);
+      },
+    );
+  },
+)
+```
+
+**Key Features:**
+- Composite filter: `businessId == userId AND isActive == true`
+- Real-time updates when rewards are added/removed
+- Sorted by point cost (cheapest first)
+
+---
+
+##### 3. Single Document Read: User Profile
+
+**Location**: [firestore_service.dart](lib/services/firestore_service.dart)
+
+**Code:**
+```dart
+/// Get user profile data (one-time read)
+Future<Map<String, dynamic>?> getUserData(String uid) async {
+  try {
+    final doc = await _firestore.collection(usersCollection).doc(uid).get();
+    return doc.data();
+  } catch (e) {
+    throw Exception('Failed to get user data: $e');
+  }
+}
+```
+
+**UI Implementation** ([home_screen.dart](lib/screens/home_screen.dart)):
+```dart
+Future<void> _loadUserData() async {
+  final user = _authService.currentUser;
+  if (user != null) {
+    try {
+      final userData = await _firestoreService.getUserData(user.uid);
+      setState(() {
+        _userName = userData?['name'] ?? user.email;
+        _userEmail = user.email ?? '';
+      });
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+    }
+  }
+}
+
+// Display with FutureBuilder alternative:
+FutureBuilder<Map<String, dynamic>?>(
+  future: _firestoreService.getUserData(user.uid),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const CircularProgressIndicator();
+    }
+    
+    final name = snapshot.data?['name'] ?? 'User';
+    return Text('Welcome, $name!');
+  },
+)
+```
+
+**Use Case:**
+- Profile data that doesn't change frequently
+- One-time fetch on screen load
+- No need for real-time updates
+
+---
+
+##### 4. Collection Query: Customer Search
+
+**Location**: [customer_service.dart](lib/services/customer_service.dart)
+
+**Code:**
+```dart
+/// Find customer by phone number
+Future<Customer?> findCustomerByPhone(String businessId, String phone) async {
+  try {
+    final snapshot = await _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('phone', isEqualTo: phone)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      return Customer.fromFirestore(snapshot.docs.first);
+    }
+    return null;
+  } catch (e) {
+    throw Exception('Failed to find customer: $e');
+  }
+}
+```
+
+**UI Implementation** ([dashboard_screen.dart](lib/screens/dashboard_screen.dart)):
+```dart
+Future<void> _searchCustomer(String phone) async {
+  try {
+    final customer = await _customerService.findCustomerByPhone(
+      _authService.currentUser!.uid,
+      phone,
+    );
+
+    if (customer != null) {
+      // Display customer details
+      _showCustomerDialog(customer);
+    } else {
+      // Show not found message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Customer not found')),
+      );
+    }
+  } catch (e) {
+    debugPrint('Search error: $e');
+  }
+}
+```
+
+**Features:**
+- Compound query with multiple `where()` clauses
+- `limit(1)` for performance optimization
+- Returns nullable `Customer?` for safe handling
+
+---
+
+##### 5. Aggregation Query: Business Statistics
+
+**Location**: [customer_service.dart](lib/services/customer_service.dart)
+
+**Code:**
+```dart
+/// Calculate statistics from customer collection
+Future<Map<String, dynamic>> getStatistics(String businessId) async {
+  try {
+    final snapshot = await _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .get();
+
+    int totalCustomers = snapshot.docs.length;
+    
+    int repeatCustomers = snapshot.docs.where((doc) {
+      final visits = doc.data()['visits'] ?? 0;
+      return visits > 1;
+    }).length;
+
+    int totalVisits = snapshot.docs.fold(0, (sum, doc) {
+      return sum + (doc.data()['visits'] ?? 0) as int;
+    });
+
+    int totalPoints = snapshot.docs.fold(0, (sum, doc) {
+      return sum + (doc.data()['points'] ?? 0) as int;
+    });
+
+    return {
+      'totalCustomers': totalCustomers,
+      'repeatCustomers': repeatCustomers,
+      'totalVisits': totalVisits,
+      'totalPoints': totalPoints,
+      'avgVisitsPerCustomer': totalCustomers > 0
+          ? (totalVisits / totalCustomers).toStringAsFixed(1)
+          : '0',
+    };
+  } catch (e) {
+    throw Exception('Failed to get statistics: $e');
+  }
+}
+```
+
+**UI Implementation** ([dashboard_screen.dart](lib/screens/dashboard_screen.dart)):
+```dart
+Future<void> _loadStatistics() async {
+  try {
+    final stats = await _customerService.getStatistics(user.uid);
+    
+    setState(() {
+      _statistics = stats;
+      _isLoadingStats = false;
+    });
+
+    // Display in StatCard widgets
+    StatCard(
+      title: 'Total Customers',
+      value: '${stats['totalCustomers'] ?? 0}',
+      icon: Icons.people,
+      color: Colors.blue,
+    ),
+    StatCard(
+      title: 'Repeat Customers',
+      value: '${stats['repeatCustomers'] ?? 0}',
+      icon: Icons.repeat,
+      color: Colors.green,
+    ),
+  } catch (e) {
+    debugPrint('Error loading statistics: $e');
+  }
+}
+```
+
+**Features:**
+- Fetches entire collection once
+- Client-side aggregation with `fold()`
+- Calculates multiple metrics in one query
+
+---
+
+##### 6. Real-Time Notes Stream
+
+**Location**: [firestore_service.dart](lib/services/firestore_service.dart)
+
+**Code:**
+```dart
+/// Get all notes for a user with real-time updates
+Stream<QuerySnapshot> getUserNotesStream(String uid) {
+  return _firestore
+      .collection(notesCollection)
+      .where('uid', isEqualTo: uid)
+      .orderBy('createdAt', descending: true)
+      .snapshots();
+}
+```
+
+**UI Implementation** ([home_screen.dart](lib/screens/home_screen.dart)):
+```dart
+StreamBuilder<QuerySnapshot>(
+  stream: _firestoreService.getUserNotesStream(user.uid),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+      return const Center(
+        child: Text('No notes yet. Create your first note!'),
+      );
+    }
+
+    final notes = snapshot.data!.docs;
+    
+    return ListView.builder(
+      itemCount: notes.length,
+      itemBuilder: (context, index) {
+        final note = notes[index];
+        final data = note.data() as Map<String, dynamic>;
+        
+        return ListTile(
+          title: Text(data['title'] ?? 'Untitled'),
+          subtitle: Text(data['content'] ?? ''),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => _deleteNote(note.id),
+          ),
+        );
+      },
+    );
+  },
+)
+```
+
+---
+
+#### Null Safety and Error Handling
+
+All read operations implement robust error handling:
+
+**Pattern 1: Null-safe field access**
+```dart
+factory Customer.fromFirestore(DocumentSnapshot doc) {
+  final data = doc.data() as Map<String, dynamic>;
+  return Customer(
+    id: doc.id,
+    name: data['name'] ?? '',              // Default empty string
+    phone: data['phone'] ?? '',
+    email: data['email'],                  // Nullable field
+    visits: data['visits'] ?? 0,           // Default to 0
+    points: data['points'] ?? 0,
+    lastVisit: (data['lastVisit'] as Timestamp?)?.toDate(),  // Safe cast
+    createdAt: (data['createdAt'] as Timestamp).toDate(),
+  );
+}
+```
+
+**Pattern 2: StreamBuilder error states**
+```dart
+StreamBuilder<List<Customer>>(
+  stream: _customerService.getCustomersStream(user.uid),
+  builder: (context, snapshot) {
+    // Loading state
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Error state
+    if (snapshot.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red, size: 48),
+            Text('Error: ${snapshot.error}'),
+            ElevatedButton(
+              onPressed: () => setState(() {}),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Empty state
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const Center(
+        child: Text('No customers yet. Add your first customer!'),
+      );
+    }
+
+    // Success state
+    final customers = snapshot.data!;
+    return ListView.builder(/* ... */);
+  },
+)
+```
+
+**Pattern 3: Try-catch for async operations**
+```dart
+Future<void> _loadStatistics() async {
+  try {
+    final stats = await _customerService.getStatistics(user.uid);
+    
+    // Nested try-catch for permission errors
+    try {
+      final redemptionStats = await _rewardsService.getRedemptionStats(user.uid);
+      stats['totalRedemptions'] = redemptionStats['totalRedemptions'];
+    } catch (e) {
+      debugPrint('⚠️ Could not load redemption stats: $e');
+      stats['totalRedemptions'] = 0;  // Graceful fallback
+    }
+    
+    setState(() {
+      _statistics = stats;
+      _isLoadingStats = false;
+    });
+  } catch (e) {
+    debugPrint('❌ Error loading statistics: $e');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load statistics: $e')),
+      );
+    }
+  }
+}
+```
+
+---
+
+#### Data Models with Type Safety
+
+All Firestore documents are converted to strongly-typed Dart models:
+
+**Customer Model** ([customer_model.dart](lib/models/customer_model.dart)):
+```dart
+class Customer {
+  final String id;
+  final String name;
+  final String phone;
+  final String? email;
+  final int visits;
+  final int points;
+  final DateTime? lastVisit;
+  final DateTime createdAt;
+
+  Customer({
+    required this.id,
+    required this.name,
+    required this.phone,
+    this.email,
+    required this.visits,
+    required this.points,
+    this.lastVisit,
+    required this.createdAt,
+  });
+
+  factory Customer.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Customer(
+      id: doc.id,
+      name: data['name'] ?? '',
+      phone: data['phone'] ?? '',
+      email: data['email'],
+      visits: data['visits'] ?? 0,
+      points: data['points'] ?? 0,
+      lastVisit: (data['lastVisit'] as Timestamp?)?.toDate(),
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+    );
+  }
+}
+```
+
+**Benefits:**
+- Type-safe field access (no dynamic casting in UI)
+- IDE autocomplete support
+- Compile-time error checking
+- Easier refactoring
+
+---
+
+#### StreamBuilder vs FutureBuilder
+
+| Aspect | StreamBuilder | FutureBuilder |
+|--------|---------------|---------------|
+| **Use Case** | Real-time data | One-time fetch |
+| **Updates** | Auto-updates on Firestore change | Manual refresh needed |
+| **Performance** | Higher bandwidth (persistent connection) | Single request |
+| **Examples** | Customer list, rewards catalog | User profile, statistics |
+| **Best For** | Collaborative/live data | Static/infrequent data |
+
+**When to use StreamBuilder:**
+- ✅ Customer list (updates when new customers added)
+- ✅ Rewards catalog (updates when rewards change)
+- ✅ Chat messages
+- ✅ Real-time dashboards
+
+**When to use FutureBuilder:**
+- ✅ User profile (rarely changes)
+- ✅ Statistics calculation (computed on demand)
+- ✅ One-time search queries
+- ✅ Historical data
+
+---
+
+#### Real-Time Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Firebase Console                         │
+│            (Business owner edits customer data)                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ Firestore Update Event
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Cloud Firestore Database                    │
+│  Collection: customers                                          │
+│   └─ Document: customer123                                      │
+│       ├─ name: "Priya Sharma" → "Priya S. Kumar" (UPDATED)     │
+│       ├─ points: 85 → 95 (UPDATED)                             │
+│       └─ lastVisit: 2026-02-04 (UPDATED)                       │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ .snapshots() stream emits new data
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              CustomerService.getCustomersStream()               │
+│  Stream<List<Customer>> → Transforms DocumentSnapshot to Model │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ Stream emits updated List<Customer>
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│         StreamBuilder in DashboardScreen (Flutter UI)           │
+│  builder: (context, snapshot) {                                 │
+│    final customers = snapshot.data!;                            │
+│    return ListView.builder(/* rebuilt automatically */);        │
+│  }                                                              │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ UI rebuilds with new data
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      📱 User's Screen                           │
+│   Customer card shows updated name and points instantly         │
+│   No manual refresh button needed                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### Testing Firestore Reads
+
+**Firebase Console Verification:**
+1. Open [Firebase Console](https://console.firebase.google.com/)
+2. Navigate to: **Firestore Database → Data**
+3. View collections: `customers`, `rewards`, `redemptions`, `notes`
+4. Manually edit a document (e.g., change customer name)
+5. **Result**: Flutter app UI updates immediately without refresh
+
+**App Testing Steps:**
+```bash
+# Run app on Chrome for easy debugging
+flutter run -d chrome
+
+# Test scenarios:
+1. Dashboard loads with customer list ✅
+2. Add new customer via Firebase Console → appears in app ✅
+3. Update customer points → UI reflects change ✅
+4. Delete customer → removed from list ✅
+5. Rewards screen shows active rewards only ✅
+6. Search customer by phone → finds correct record ✅
+```
+
+**Console Logs:**
+```
+✓ Firestore connected successfully
+✓ Fetching customers for business: abc123userId
+✓ Received 12 customer documents
+✓ Real-time update: Customer points changed
+✓ UI rebuilt with new data
+```
+
+---
+
+#### Performance Optimizations
+
+**1. Limit Query Results:**
+```dart
+// Instead of fetching all documents
+_firestore.collection('customers').get()
+
+// Paginate large datasets
+_firestore.collection('customers')
+  .limit(50)  // Only fetch 50 at a time
+  .get()
+```
+
+**2. Index Composite Queries:**
+```dart
+// Firestore auto-suggests index creation
+_firestore.collection('customers')
+  .where('businessId', isEqualTo: userId)
+  .orderBy('lastVisit', descending: true)
+  .snapshots()
+// Required index: businessId (ASC) + lastVisit (DESC)
+```
+
+**3. Use Exists Checks:**
+```dart
+final doc = await _firestore.collection('users').doc(uid).get();
+
+if (doc.exists) {
+  // Safe to access doc.data()
+  final data = doc.data()!;
+} else {
+  // Handle missing document
+  return null;
+}
+```
+
+**4. Cache Management:**
+```dart
+// Firestore automatically caches data
+// Access cached data even when offline
+_firestore.collection('customers')
+  .where('businessId', isEqualTo: userId)
+  .snapshots(includeMetadataChanges: true)  // Track cache vs server
+```
+
+---
+
+#### 💡 Reflection
+
+**Which read method you used:**
+
+The Customer Loop app primarily uses **real-time streams** (`snapshots()`) for core features:
+- Customer list on dashboard
+- Rewards catalog
+- Redemption history
+- Notes list
+
+We chose streams because loyalty data changes frequently:
+- Customers check in → points update
+- Rewards are redeemed → balances change
+- Business owners add new rewards → catalog updates
+
+For infrequent data like user profiles and statistics, we use **one-time reads** (`get()`) to reduce bandwidth and Firestore read costs.
+
+**Why real-time streams are useful:**
+
+1. **Automatic Synchronization**: Multiple business owners can view the same dashboard, and changes made by one appear instantly for others without manual refresh
+
+2. **Reduced Code Complexity**: No need for:
+   - Refresh buttons
+   - Pull-to-refresh gestures
+   - Manual state management
+   - Periodic polling
+
+3. **Better UX**: Users always see the latest data. If a customer redeems a reward on a cashier's device, the manager's dashboard updates immediately
+
+4. **Offline Support**: Firestore streams automatically handle offline mode, showing cached data and syncing when connection returns
+
+5. **Consistency**: Prevents stale data issues where UI shows outdated information
+
+**Real-world example**: When a customer redeems a 100-point reward:
+- Their points decrease from 150 → 50
+- Dashboard StatCard updates "Total Points" automatically
+- Customer list re-sorts by last visit
+- No page reload required
+
+**Challenges faced:**
+
+1. **Permission Denied Errors**:
+   - **Problem**: Firestore security rules blocked redemption stats query
+   - **Solution**: Nested try-catch with fallback values (default to 0)
+   - **Learning**: Always handle permission errors gracefully
+
+2. **Null Safety**:
+   - **Problem**: Firestore returns `Map<String, dynamic>` (all values nullable)
+   - **Solution**: Created strongly-typed models with `??` operators and null checks
+   - **Learning**: Type-safe models prevent runtime crashes
+
+3. **StreamBuilder Rebuilds**:
+   - **Problem**: UI rebuilt too frequently, causing performance issues
+   - **Solution**: Use `const` widgets where possible, extract StatefulWidgets for expensive builds
+   - **Learning**: Firestore streams are efficient, but Flutter rebuilds must be optimized
+
+4. **Query Index Creation**:
+   - **Problem**: Composite queries failed with "index not found" error
+   - **Solution**: Firestore Console auto-prompted index creation with direct link
+   - **Learning**: Complex queries require indexes (Firestore makes this easy)
+
+5. **Empty State Handling**:
+   - **Problem**: App crashed when collections were empty (`data!.docs.first`)
+   - **Solution**: Added null checks: `if (!snapshot.hasData || snapshot.data!.isEmpty)`
+   - **Learning**: Always handle empty collections before accessing elements
+
+6. **Timestamp Conversion**:
+   - **Problem**: Firestore `Timestamp` type incompatible with Dart `DateTime`
+   - **Solution**: Safe casting with `?.toDate()` in model factory constructors
+   - **Learning**: Firestore has custom types that need explicit conversion
+
+The read operations form the foundation of the app's real-time capabilities. By combining streams for live data and one-time reads for static data, we achieved a responsive, efficient user experience while minimizing unnecessary bandwidth usage.
+
 ---
 
 ## Features
