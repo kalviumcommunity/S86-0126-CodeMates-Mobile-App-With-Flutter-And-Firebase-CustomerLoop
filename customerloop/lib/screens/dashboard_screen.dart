@@ -8,6 +8,7 @@ import '../widgets/toggle_view_button.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/realtime_sync_indicator.dart';
 import 'rewards_screen.dart';
+import 'customer_insights_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -60,17 +61,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       try {
         debugPrint('👤 User ID: ${user.uid}');
         final stats = await _customerService.getStatistics(user.uid);
-        
+
         // Try to get redemption stats, but don't fail if permissions are missing
         Map<String, dynamic>? redemptionStats;
         try {
           redemptionStats = await _rewardsService.getRedemptionStats(user.uid);
         } catch (e) {
-          debugPrint('⚠️ Could not load redemption stats (permission denied): $e');
+          debugPrint(
+            '⚠️ Could not load redemption stats (permission denied): $e',
+          );
           // Set default values if redemption stats fail
           redemptionStats = {'totalRedemptions': 0};
         }
-        
+
         debugPrint('✅ Statistics loaded: ${stats.toString()}');
         if (mounted) {
           setState(() {
@@ -97,7 +100,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _authService.logout();
       // Logout successful - authStateChanges() will handle navigation automatically to LoginScreen
       if (mounted) {
-        debugPrint('✅ Logout successful - StreamBuilder will auto-navigate to LoginScreen');
+        debugPrint(
+          '✅ Logout successful - StreamBuilder will auto-navigate to LoginScreen',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Logged out successfully!'),
@@ -108,9 +113,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logout failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
       }
     }
   }
@@ -361,13 +366,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 () => Navigator.push(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) => const RewardsScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            const RewardsScreen(),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
                       return FadeTransition(
                         opacity: animation,
                         child: ScaleTransition(
                           scale: Tween<double>(begin: 0.9, end: 1.0).animate(
-                            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            ),
                           ),
                           child: child,
                         ),
@@ -407,9 +422,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 onSubmitted: (v) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Search not implemented in demo'),
+                  // Navigate to Customer Insights screen (Assignment 3.35)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CustomerInsightsScreen(),
                     ),
                   );
                 },
@@ -502,41 +519,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 1.3,
+                      childAspectRatio: 1.5,
                       children: [
-                    // Using custom StatCard widget for consistent statistics display
-                    StatCard(
-                      title: 'Total Customers',
-                      value: '${_statistics?['totalCustomers'] ?? 0}',
-                      icon: Icons.people,
-                      color: Colors.blue,
+                        // Using custom StatCard widget for consistent statistics display
+                        StatCard(
+                          title: 'Total Customers',
+                          value: '${_statistics?['totalCustomers'] ?? 0}',
+                          icon: Icons.people,
+                          color: Colors.blue,
+                        ),
+                        StatCard(
+                          title: 'Repeat Customers',
+                          value: '${_statistics?['repeatCustomers'] ?? 0}',
+                          icon: Icons.repeat,
+                          color: Colors.green,
+                        ),
+                        StatCard(
+                          title: 'Rewards Redeemed',
+                          value:
+                              '${_redemptionStats?['totalRedemptions'] ?? 0}',
+                          icon: Icons.redeem,
+                          color: Colors.orange,
+                        ),
+                        StatCard(
+                          title: 'Total Visits',
+                          value: '${_statistics?['totalVisits'] ?? 0}',
+                          icon: Icons.trending_up,
+                          color: Colors.orange,
+                        ),
+                        StatCard(
+                          title: 'Avg Visits/Customer',
+                          value: _statistics?['avgVisitsPerCustomer'] ?? '0',
+                          icon: Icons.bar_chart,
+                          color: Colors.purple,
+                        ),
+                      ],
                     ),
-                    StatCard(
-                      title: 'Repeat Customers',
-                      value: '${_statistics?['repeatCustomers'] ?? 0}',
-                      icon: Icons.repeat,
-                      color: Colors.green,
-                    ),
-                    StatCard(
-                      title: 'Rewards Redeemed',
-                      value: '${_redemptionStats?['totalRedemptions'] ?? 0}',
-                      icon: Icons.redeem,
-                      color: Colors.orange,
-                    ),
-                    StatCard(
-                      title: 'Total Visits',
-                      value: '${_statistics?['totalVisits'] ?? 0}',
-                      icon: Icons.trending_up,
-                      color: Colors.orange,
-                    ),
-                    StatCard(
-                      title: 'Avg Visits/Customer',
-                      value: _statistics?['avgVisitsPerCustomer'] ?? '0',
-                      icon: Icons.bar_chart,
-                      color: Colors.purple,
-                    ),
-                  ],
-                ),
                   ),
                 ),
 
@@ -546,18 +564,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Recent Customers',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 12),
-                      const RealtimeSyncIndicator(
-                        isActive: true,
-                        message: 'Live Updates',
-                      ),
-                    ],
+                  Flexible(
+                    child: Row(
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'Recent Customers',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const RealtimeSyncIndicator(
+                          isActive: true,
+                          message: 'Live Updates',
+                        ),
+                      ],
+                    ),
                   ),
                   Row(
                     children: [
