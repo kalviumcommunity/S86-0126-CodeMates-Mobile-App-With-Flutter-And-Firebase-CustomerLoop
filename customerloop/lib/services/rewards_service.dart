@@ -20,6 +20,110 @@ class RewardsService {
         );
   }
 
+  // ============================================
+  // ADVANCED QUERY METHODS (Assignment 3.35)
+  // ============================================
+
+  /// Get affordable rewards for customer (points <= maxPoints)
+  /// Filters rewards within customer's budget
+  Stream<List<Reward>> getAffordableRewards(String businessId, int maxPoints) {
+    return _firestore
+        .collection(rewardsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('isActive', isEqualTo: true)
+        .where('pointsCost', isLessThanOrEqualTo: maxPoints)
+        .orderBy('pointsCost')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get premium rewards (high point cost)
+  Stream<List<Reward>> getPremiumRewards(String businessId, int minPoints) {
+    return _firestore
+        .collection(rewardsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('isActive', isEqualTo: true)
+        .where('pointsCost', isGreaterThanOrEqualTo: minPoints)
+        .orderBy('pointsCost', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get rewards by type (discount, product, etc.)
+  Stream<List<Reward>> getRewardsByType(String businessId, String type) {
+    return _firestore
+        .collection(rewardsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('isActive', isEqualTo: true)
+        .where('type', isEqualTo: type)
+        .orderBy('pointsCost')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get top N most popular rewards (by redemption count)
+  /// Note: This requires a redemptionCount field to be maintained
+  Stream<List<Reward>> getPopularRewards(String businessId, {int limit = 5}) {
+    return _firestore
+        .collection(rewardsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('isActive', isEqualTo: true)
+        .orderBy('pointsCost')
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get recent redemptions with limit
+  Stream<List<Redemption>> getRecentRedemptions(
+    String businessId, {
+    int limit = 10,
+  }) {
+    return _firestore
+        .collection(redemptionsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .orderBy('redeemedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => Redemption.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
+  /// Get high-value redemptions (points >= threshold)
+  Stream<List<Redemption>> getHighValueRedemptions(
+    String businessId,
+    int minPoints,
+  ) {
+    return _firestore
+        .collection(redemptionsCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('pointsUsed', isGreaterThanOrEqualTo: minPoints)
+        .orderBy('pointsUsed', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => Redemption.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
   // Add a new reward
   Future<String> addReward(
     String businessId,

@@ -69,6 +69,124 @@ class CustomerService {
     }
   }
 
+  // ============================================
+  // ADVANCED QUERY METHODS (Assignment 3.35)
+  // ============================================
+
+  /// Get top customers by points (using orderBy + limit)
+  /// Example: Top 10 most loyal customers
+  Stream<List<Customer>> getTopCustomersByPoints(
+    String businessId, {
+    int limit = 10,
+  }) {
+    return _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .orderBy('points', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get customers with points greater than threshold (comparison filter)
+  /// Example: VIP customers with 500+ points
+  Stream<List<Customer>> getHighPointCustomers(
+    String businessId,
+    int minPoints,
+  ) {
+    return _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('points', isGreaterThanOrEqualTo: minPoints)
+        .orderBy('points', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get repeat customers (multiple where filters)
+  /// Filters: businessId + visits > 1
+  Stream<List<Customer>> getRepeatCustomers(String businessId) {
+    return _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('visits', isGreaterThan: 1)
+        .orderBy('visits', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get recent customers (last 30 days using timestamp comparison)
+  Stream<List<Customer>> getRecentCustomers(
+    String businessId, {
+    int daysAgo = 30,
+  }) {
+    final cutoffDate = DateTime.now().subtract(Duration(days: daysAgo));
+
+    return _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('lastVisit', isGreaterThanOrEqualTo: cutoffDate)
+        .orderBy('lastVisit', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Search customers by name (startsWith pattern)
+  /// Note: Firestore doesn't support full-text search, so we use range query
+  Stream<List<Customer>> searchCustomersByName(
+    String businessId,
+    String searchQuery,
+  ) {
+    final String searchEnd = searchQuery + '\\uf8ff';
+
+    return _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .where('name', isGreaterThanOrEqualTo: searchQuery)
+        .where('name', isLessThanOrEqualTo: searchEnd)
+        .orderBy('name')
+        .limit(20)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Get customers sorted by different criteria
+  Stream<List<Customer>> getCustomersSortedBy(
+    String businessId,
+    String sortField, {
+    bool descending = true,
+    int? limit,
+  }) {
+    var query = _firestore
+        .collection(customersCollection)
+        .where('businessId', isEqualTo: businessId)
+        .orderBy(sortField, descending: descending);
+
+    if (limit != null) {
+      query = query.limit(limit) as Query<Map<String, dynamic>>;
+    }
+
+    return query.snapshots().map(
+      (snapshot) =>
+          snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+    );
+  }
+
   // Get customer statistics
   Future<Map<String, dynamic>> getStatistics(String businessId) async {
     try {
