@@ -6,6 +6,7 @@ import '../models/customer_model.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/toggle_view_button.dart';
 import '../widgets/customer_card.dart';
+import '../widgets/realtime_sync_indicator.dart';
 import 'rewards_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -545,9 +546,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Recent Customers',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      const Text(
+                        'Recent Customers',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 12),
+                      const RealtimeSyncIndicator(
+                        isActive: true,
+                        message: 'Live Updates',
+                      ),
+                    ],
                   ),
                   Row(
                     children: [

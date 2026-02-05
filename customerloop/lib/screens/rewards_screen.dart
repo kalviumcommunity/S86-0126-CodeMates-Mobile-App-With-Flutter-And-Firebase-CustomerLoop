@@ -4,6 +4,7 @@ import '../services/rewards_service.dart';
 import '../services/customer_service.dart';
 import '../models/reward_model.dart';
 import '../models/customer_model.dart';
+import '../widgets/realtime_sync_indicator.dart';
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key});
@@ -310,7 +311,16 @@ class _RewardsScreenState extends State<RewardsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rewards Catalog'),
+        title: Row(
+          children: [
+            const Text('Rewards Catalog'),
+            const SizedBox(width: 12),
+            const RealtimeSyncIndicator(
+              isActive: true,
+              message: 'Live',
+            ),
+          ],
+        ),
         elevation: 0,
         actions: [
           IconButton(

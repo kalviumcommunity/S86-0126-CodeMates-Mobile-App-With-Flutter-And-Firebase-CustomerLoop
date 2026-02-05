@@ -3043,6 +3043,894 @@ With our secure implementation:
 
 This ensures business owners can trust their loyalty data, and customers receive accurate rewards.
 
+### Assignment 3.34: Implementing Real-Time Sync and Snapshot Listeners with Firestore
+
+This section demonstrates how Customer Loop implements real-time data synchronization using Firestore snapshot listeners. The app uses `StreamBuilder` with `.snapshots()` to provide instant UI updates whenever data changes in the database, creating a seamless, collaborative user experience.
+
+#### Real-Time Features Implemented
+
+The app implements real-time synchronization across all major screens:
+
+| Screen | Real-Time Feature | Update Trigger |
+|--------|-------------------|----------------|
+| Dashboard | Customer list | Add/edit/delete customer |
+| Dashboard | Statistics cards | Customer activity changes |
+| Rewards Catalog | Available rewards | Add/edit/deactivate reward |
+| Rewards Screen | Customer selection | Points balance changes |
+| Redemption History | Past redemptions | New reward redemption |
+| Home Screen | Notes list | Add/edit/delete note |
+
+---
+
+#### Understanding Firestore Snapshot Listeners
+
+**What are Snapshot Listeners?**
+
+Snapshot listeners are real-time data streams that automatically notify your app when documents or collections change in Firestore. Instead of polling the database periodically, Firestore pushes updates instantly.
+
+**Two Types of Listeners:**
+
+1. **Collection Snapshots** - Listen to all documents in a collection
+2. **Document Snapshots** - Listen to a single document
+
+**How They Work:**
+
+```
+┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
+│   Your Flutter   │         │     Firestore    │         │   Other Users    │
+│       App        │         │     Database     │         │    (Devices)     │
+└────────┬─────────┘         └────────┬─────────┘         └────────┬─────────┘
+         │                            │                            │
+         │ .snapshots() subscription  │                            │
+         ├────────────────────────────>                            │
+         │                            │                            │
+         │   Initial data stream      │                            │
+         <────────────────────────────┤                            │
+         │                            │                            │
+         │                            │  User adds/edits document  │
+         │                            <────────────────────────────┤
+         │                            │                            │
+         │   Update notification      │                            │
+         <────────────────────────────┤                            │
+         │   (UI rebuilds instantly) │                            │
+         │                            │                            │
+```
+
+---
+
+#### Implementation Examples
+
+##### 1. Collection Listener: Real-Time Customer List
+
+**Location**: [customer_service.dart](lib/services/customer_service.dart)
+
+**Service Layer:**
+```dart
+/// Real-time stream of all customers for a business
+/// Automatically updates when any customer is added, modified, or deleted
+Stream<List<Customer>> getCustomersStream(String businessId) {
+  return _firestore
+      .collection(customersCollection)
+      .where('businessId', isEqualTo: businessId)
+      .orderBy('lastVisit', descending: true)  // Real-time sorting
+      .snapshots()  // ← Key method: creates real-time listener
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList(),
+      );
+}
+```
+
+**UI Implementation** ([dashboard_screen.dart](lib/screens/dashboard_screen.dart)):
+```dart
+StreamBuilder<List<Customer>>(
+  stream: user != null
+      ? _customerService.getCustomersStream(user.uid)
+      : null,
+  builder: (context, snapshot) {
+    // Handle loading state
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Handle error state
+    if (snapshot.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red, size: 48),
+            Text('Error: ${snapshot.error}'),
+            ElevatedButton(
+              onPressed: () => setState(() {}),  // Retry
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final customers = snapshot.data ?? [];
+
+    // Handle empty state
+    if (customers.isEmpty) {
+      return const Center(
+        child: Text('No customers yet. Add your first customer!'),
+      );
+    }
+
+    // Success state - display data
+    return ListView.builder(
+      itemCount: customers.length,
+      itemBuilder: (context, index) {
+        final customer = customers[index];
+        return CustomerCard(
+          customer: customer,
+          onTap: () => _showCustomerDetails(customer),
+          onRecordVisit: () => _recordVisit(customer),
+        );
+      },
+    );
+  },
+)
+```
+
+**Real-Time Behaviors:**
+- ✅ New customer added → Appears at top of list instantly
+- ✅ Customer name edited → Updates immediately without refresh
+- ✅ Visit recorded → Customer re-sorts by lastVisit
+- ✅ Customer deleted → Removed from UI instantly
+
+---
+
+##### 2. Collection Listener: Real-Time Rewards Catalog
+
+**Location**: [rewards_service.dart](lib/services/rewards_service.dart)
+
+**Service Layer:**
+```dart
+/// Real-time stream of active rewards
+/// Updates when rewards are added, edited, or deactivated
+Stream<List<Reward>> getRewardsStream(String businessId) {
+  return _firestore
+      .collection(rewardsCollection)
+      .where('businessId', isEqualTo: businessId)
+      .where('isActive', isEqualTo: true)
+      .orderBy('pointsCost')
+      .snapshots()  // Real-time listener
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => Reward.fromFirestore(doc)).toList(),
+      );
+}
+```
+
+**UI Implementation** ([rewards_screen.dart](lib/screens/rewards_screen.dart)):
+```dart
+StreamBuilder<List<Reward>>(
+  stream: user != null 
+      ? _rewardsService.getRewardsStream(user.uid) 
+      : null,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Center(child: Text('Error: ${snapshot.error}'));
+    }
+
+    final rewards = snapshot.data ?? [];
+
+    if (rewards.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.card_giftcard, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text('No rewards available'),
+          ],
+        ),
+      );
+    }
+
+    // Grid display of rewards
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.8,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: rewards.length,
+      itemBuilder: (context, index) {
+        final reward = rewards[index];
+        return RewardCard(
+          reward: reward,
+          onTap: () => _showRedeemDialog(reward),
+        );
+      },
+    );
+  },
+)
+```
+
+**Real-Time Scenarios:**
+- **Scenario 1**: Business owner adds "Free Coffee" reward
+  - Firestore write completes
+  - `.snapshots()` triggers update
+  - GridView rebuilds with new card
+  - All connected devices see new reward
+  
+- **Scenario 2**: Owner changes 100-point reward to 80 points
+  - Document updated in Firestore
+  - StreamBuilder receives new data
+  - Card shows updated point cost
+  - No app restart needed
+
+---
+
+##### 3. Collection Listener: Real-Time Redemption History
+
+**Location**: [rewards_service.dart](lib/services/rewards_service.dart)
+
+**Service Layer:**
+```dart
+/// Real-time stream of redemption history for a business
+Stream<List<Redemption>> getBusinessRedemptionsStream(String businessId) {
+  return _firestore
+      .collection(redemptionsCollection)
+      .where('businessId', isEqualTo: businessId)
+      .orderBy('redeemedAt', descending: true)
+      .limit(50)  // Only recent 50 for performance
+      .snapshots()
+      .map(
+        (snapshot) =>
+            snapshot.docs
+                .map((doc) => Redemption.fromFirestore(doc))
+                .toList(),
+      );
+}
+```
+
+**UI Implementation:**
+```dart
+StreamBuilder<List<Redemption>>(
+  stream: _rewardsService.getBusinessRedemptionsStream(user.uid),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final redemptions = snapshot.data ?? [];
+
+    if (redemptions.isEmpty) {
+      return const Center(
+        child: Text('No redemptions yet'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: redemptions.length,
+      itemBuilder: (context, index) {
+        final redemption = redemptions[index];
+        return ListTile(
+          leading: const Icon(Icons.card_giftcard, color: Colors.purple),
+          title: Text(redemption.customerName),
+          subtitle: Text(
+            '${redemption.rewardName} • ${redemption.pointsUsed} points',
+          ),
+          trailing: Text(
+            _formatDateTime(redemption.redeemedAt),
+            style: const TextStyle(fontSize: 12),
+          ),
+        );
+      },
+    );
+  },
+)
+```
+
+**Real-Time Update:**
+When a customer redeems a reward:
+1. New document created in `redemptions` collection
+2. `.snapshots()` detects change
+3. New redemption appears at top of list
+4. All managers see update simultaneously
+
+---
+
+##### 4. Collection Listener: Real-Time Notes
+
+**Location**: [firestore_service.dart](lib/services/firestore_service.dart)
+
+**Service Layer:**
+```dart
+/// Real-time stream of user notes
+Stream<QuerySnapshot> getUserNotesStream(String uid) {
+  return _firestore
+      .collection(notesCollection)
+      .where('uid', isEqualTo: uid)
+      .orderBy('createdAt', descending: true)
+      .snapshots();
+}
+```
+
+**UI Implementation** ([home_screen.dart](lib/screens/home_screen.dart)):
+```dart
+StreamBuilder<QuerySnapshot>(
+  stream: _firestoreService.getUserNotesStream(user.uid),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+      return const Center(
+        child: Text('No notes yet. Create your first note!'),
+      );
+    }
+
+    final notes = snapshot.data!.docs;
+
+    return ListView.builder(
+      itemCount: notes.length,
+      itemBuilder: (context, index) {
+        final note = notes[index];
+        final data = note.data() as Map<String, dynamic>;
+
+        return Card(
+          child: ListTile(
+            title: Text(data['title'] ?? 'Untitled'),
+            subtitle: Text(
+              data['content'] ?? '',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _editNote(note.id, data),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteNote(note.id),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  },
+)
+```
+
+---
+
+##### 5. Document Change Detection (Advanced)
+
+For more granular control, Firestore provides `docChanges` to detect exactly what changed:
+
+**Example: Activity Feed**
+```dart
+FirebaseFirestore.instance
+    .collection('customers')
+    .where('businessId', isEqualTo: userId)
+    .snapshots()
+    .listen((snapshot) {
+  for (var change in snapshot.docChanges) {
+    switch (change.type) {
+      case DocumentChangeType.added:
+        debugPrint('✅ New customer added: ${change.doc.id}');
+        _showNotification('New customer: ${change.doc.data()['name']}');
+        break;
+        
+      case DocumentChangeType.modified:
+        debugPrint('✏️ Customer updated: ${change.doc.id}');
+        _showNotification('Customer updated');
+        break;
+        
+      case DocumentChangeType.removed:
+        debugPrint('🗑️ Customer removed: ${change.doc.id}');
+        _showNotification('Customer deleted');
+        break;
+    }
+  }
+});
+```
+
+**Use Cases:**
+- Show toast notifications for changes
+- Animate new items entering the list
+- Log activity for analytics
+- Trigger sound effects or haptic feedback
+
+---
+
+#### Visual Real-Time Sync Indicator
+
+The app includes a custom widget to show that data is live:
+
+**Location**: [realtime_sync_indicator.dart](lib/widgets/realtime_sync_indicator.dart)
+
+**Widget Code:**
+```dart
+class RealtimeSyncIndicator extends StatefulWidget {
+  final bool isActive;
+  final String? message;
+
+  const RealtimeSyncIndicator({
+    super.key,
+    this.isActive = true,
+    this.message,
+  });
+
+  @override
+  State<RealtimeSyncIndicator> createState() => _RealtimeSyncIndicatorState();
+}
+
+class _RealtimeSyncIndicatorState extends State<RealtimeSyncIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();  // Continuous rotation
+
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RotationTransition(
+            turns: _animation,
+            child: Icon(
+              Icons.sync,
+              size: 16,
+              color: Colors.green.shade700,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            widget.message ?? 'Live',
+            style: TextStyle(
+              color: Colors.green.shade900,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+**Usage in Dashboard:**
+```dart
+Row(
+  children: [
+    const Text(
+      'Recent Customers',
+      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    ),
+    const SizedBox(width: 12),
+    const RealtimeSyncIndicator(
+      isActive: true,
+      message: 'Live Updates',
+    ),
+  ],
+)
+```
+
+This provides visual feedback that the customer list is updating in real-time.
+
+---
+
+#### Connection State Handling
+
+StreamBuilder provides connection state tracking:
+
+```dart
+StreamBuilder<List<Customer>>(
+  stream: _customerService.getCustomersStream(userId),
+  builder: (context, snapshot) {
+    switch (snapshot.connectionState) {
+      case ConnectionState.none:
+        return const Text('No connection');
+        
+      case ConnectionState.waiting:
+        return const CircularProgressIndicator();
+        
+      case ConnectionState.active:
+        // Stream is active and delivering data
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+        if (!snapshot.hasData) {
+          return const Text('No data available');
+        }
+        return _buildCustomerList(snapshot.data!);
+        
+      case ConnectionState.done:
+        // Stream completed (won't happen with .snapshots())
+        return const Text('Stream ended');
+    }
+  },
+)
+```
+
+**States Explained:**
+
+| State | Meaning | When It Occurs |
+|-------|---------|---------------|
+| `none` | Stream not started | Before first data arrives |
+| `waiting` | Waiting for first data | Initial loading |
+| `active` | Stream is live | Receiving real-time updates |
+| `done` | Stream ended | N/A for `.snapshots()` (never completes) |
+
+---
+
+#### Offline Support
+
+Firestore automatically caches data for offline access:
+
+**How it Works:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       Online Mode                           │
+├─────────────────────────────────────────────────────────────┤
+│  1. .snapshots() fetches from Firestore server              │
+│  2. Data cached locally in IndexedDB (web) / SQLite (mobile)│
+│  3. UI displays server data                                 │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                      Offline Mode                            │
+├─────────────────────────────────────────────────────────────┤
+│  1. .snapshots() returns cached data                        │
+│  2. Writes queued locally                                   │
+│  3. UI continues to function                                │
+│  4. When online: queued writes sync automatically           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Detecting Offline State:**
+```dart
+StreamBuilder<List<Customer>>(
+  stream: _customerService.getCustomersStream(userId),
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      // Check if data is from cache (optional)
+      final metadata = snapshot.data!.metadata;
+      if (metadata.isFromCache) {
+        // Show indicator that we're offline
+        return Column(
+          children: [
+            Container(
+              color: Colors.orange.shade100,
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  const Icon(Icons.offline_bolt, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  const Text('Offline - showing cached data'),
+                ],
+              ),
+            ),
+            _buildCustomerList(snapshot.data!),
+          ],
+        );
+      }
+    }
+    
+    return _buildCustomerList(snapshot.data!);
+  },
+)
+```
+
+---
+
+#### Performance Optimizations
+
+**1. Limit Query Results:**
+```dart
+// Don't fetch all documents
+_firestore.collection('customers').snapshots()
+
+// Limit to recent 100
+_firestore.collection('customers')
+  .orderBy('createdAt', descending: true)
+  .limit(100)
+  .snapshots()
+```
+
+**2. Pagination with Snapshots:**
+```dart
+// First page
+_firestore.collection('customers')
+  .orderBy('createdAt', descending: true)
+  .limit(20)
+  .snapshots()
+
+// Next page (load more button)
+_firestore.collection('customers')
+  .orderBy('createdAt', descending: true)
+  .startAfter([lastDocument])
+  .limit(20)
+  .get()  // Use .get() for pagination, not .snapshots()
+```
+
+**3. Detach Listeners When Not Needed:**
+```dart
+late StreamSubscription<List<Customer>> _subscription;
+
+@override
+void initState() {
+  super.initState();
+  _subscription = _customerService
+      .getCustomersStream(userId)
+      .listen((customers) {
+    setState(() => _customers = customers);
+  });
+}
+
+@override
+void dispose() {
+  _subscription.cancel();  // Stop listening
+  super.dispose();
+}
+```
+
+**4. Use Indexes for Compound Queries:**
+```dart
+// This query requires an index
+_firestore.collection('customers')
+  .where('businessId', isEqualTo: userId)
+  .orderBy('lastVisit', descending: true)
+  .snapshots()
+
+// Firestore Console will prompt to create index automatically
+```
+
+---
+
+#### Real-Time Testing Scenarios
+
+**Test 1: Concurrent Updates**
+1. Open app on Device A (Chrome)
+2. Open app on Device B (Phone)
+3. Add customer on Device A
+4. **Expected**: Customer appears on Device B instantly
+5. Edit customer name on Device B
+6. **Expected**: Name updates on Device A instantly
+
+**Test 2: Multi-User Collaboration**
+1. Business owner and cashier both logged in
+2. Cashier records customer visit (adds points)
+3. **Expected**: Dashboard statistics update for owner in real-time
+4. Owner creates new reward
+5. **Expected**: Reward appears in cashier's catalog instantly
+
+**Test 3: Offline Mode**
+1. Turn off internet on device
+2. Add customer offline
+3. **Expected**: Customer appears in list (cached locally)
+4. Turn internet back on
+5. **Expected**: Customer syncs to Firestore automatically
+6. Firebase Console shows new customer
+
+**Test 4: Rapid Changes**
+1. Record 5 customer visits in quick succession
+2. **Expected**: Points update for all customers without conflicts
+3. Dashboard statistics refresh in real-time
+4. No data loss or race conditions
+
+---
+
+#### .snapshots() vs .get() Comparison
+
+| Aspect | `.snapshots()` | `.get()` |
+|--------|----------------|----------|
+| **Type** | Stream (continuous) | Future (one-time) |
+| **Updates** | Automatic real-time | Manual refresh required |
+| **Connection** | Persistent | Closed after response |
+| **Bandwidth** | Higher (constant connection) | Lower (single request) |
+| **Offline** | Works (cached data) | Works (cached if available) |
+| **Use Case** | Live dashboards, chat | Static data, search queries |
+| **Cost** | Charged per listener hour | Charged per document read |
+
+**When to use `.snapshots()`:**
+- ✅ Customer list (frequent updates expected)
+- ✅ Rewards catalog (collaborative editing)
+- ✅ Chat messages
+- ✅ Live order status
+- ✅ Collaborative documents
+
+**When to use `.get()`:**
+- ✅ One-time searches
+- ✅ Historical reports
+- ✅ Statistics calculation
+- ✅ Data exports
+- ✅ Archived records
+
+---
+
+#### 💡 Reflection
+
+**Why real-time sync improves UX:**
+
+Real-time synchronization transforms the app from a traditional request-response model into a live, collaborative platform:
+
+1. **No Manual Refresh**: Users never see stale data. Updates appear instantly without pull-to-refresh gestures or refresh buttons.
+
+2. **Collaborative Experience**: Multiple staff members can work simultaneously. When a cashier records a visit, the manager sees updated statistics immediately.
+
+3. **Reduced Cognitive Load**: Users trust that what they see is current. No mental question of "Is this data up-to-date?"
+
+4. **Immediate Feedback**: Actions feel instantaneous. Add a customer → see it in the list. Redeem a reward → points decrease immediately.
+
+5. **Competitive Advantage**: Apps with real-time features feel modern and professional compared to batch-update competitors.
+
+**Real-world example**: Coffee shop with 2 cashiers during rush hour:
+- **Without real-time**: Cashier A adds customer, Cashier B doesn't see it, creates duplicate
+- **With real-time**: Cashier A adds customer, Cashier B sees it instantly, can look up by phone
+
+**How Firestore's .snapshots() simplifies live updates:**
+
+Before Firestore's real-time capabilities, implementing live updates required:
+1. Setting up WebSocket server
+2. Managing connection lifecycle
+3. Handling reconnection logic
+4. Broadcasting updates to all clients
+5. Syncing local and server state
+6. Implementing offline queues
+
+**Firestore's `.snapshots()` handles all of this automatically:**
+
+```dart
+// Traditional approach (complex)
+class CustomerService {
+  WebSocket? _ws;
+  List<Customer> _cache = [];
+  
+  void connect() {
+    _ws = WebSocket('wss://server.com');
+    _ws?.listen((data) {
+      // Parse update
+      // Merge with cache
+      // Notify listeners
+      // Handle errors
+    }, onError: (error) {
+      // Reconnection logic
+    });
+  }
+  
+  Stream<List<Customer>> getCustomers() {
+    // Complex caching and state management
+  }
+}
+
+// Firestore approach (simple)
+Stream<List<Customer>> getCustomersStream(String businessId) {
+  return _firestore
+      .collection('customers')
+      .where('businessId', isEqualTo: businessId)
+      .snapshots()  // ← All complexity handled
+      .map((snapshot) => 
+          snapshot.docs.map((doc) => Customer.fromFirestore(doc)).toList()
+      );
+}
+```
+
+**What Firestore handles:**
+- ✅ WebSocket connection management
+- ✅ Automatic reconnection
+- ✅ Delta updates (only changed data sent)
+- ✅ Offline caching
+- ✅ Conflict resolution
+- ✅ Authentication integration
+- ✅ Security rules enforcement
+
+**Developer experience benefits:**
+- **5 lines of code** vs hundreds for custom WebSocket implementation
+- **No server maintenance** - Google handles infrastructure
+- **Built-in offline support** - works without extra code
+- **Type-safe streams** - integrates with Dart's Stream API
+- **Automatic cleanup** - no memory leaks
+
+**Challenges faced:**
+
+1. **Initial Connection Delay**:
+   - **Problem**: First `.snapshots()` call takes 1-2 seconds to establish connection
+   - **Solution**: Show loading indicator with `ConnectionState.waiting`
+   - **Learning**: Cache data locally for instant subsequent loads
+
+2. **Excessive Rebuilds**:
+   - **Problem**: StreamBuilder rebuilds entire widget tree on every update
+   - **Solution**: 
+     - Use `const` widgets where possible
+     - Extract expensive widgets into separate StatefulWidgets
+     - Implement `shouldRebuild` logic for custom builders
+   - **Example**:
+     ```dart
+     // Bad: Rebuilds everything
+     StreamBuilder(
+       stream: customersStream,
+       builder: (context, snapshot) {
+         return ExpensiveCustomerList(snapshot.data);
+       },
+     )
+     
+     // Good: Only rebuilds CustomerList
+     StreamBuilder(
+       stream: customersStream,
+       builder: (context, snapshot) {
+         return const Header(),  // Doesn't rebuild
+         CustomerList(customers: snapshot.data),  // Only this rebuilds
+       },
+     )
+     ```
+
+3. **Offline Data Confusion**:
+   - **Problem**: Users couldn't tell if data was live or cached when offline
+   - **Solution**: Added sync indicator and offline banner
+   - **Learning**: Always provide visual feedback for connection state
+
+4. **Query Limits**:
+   - **Problem**: Firestore queries have limitations (e.g., can't use `array-contains` with multiple `orderBy`)
+   - **Solution**: Redesigned queries or denormalized data
+   - **Example**: Stored `lastVisit` as separate field instead of array of visits
+
+5. **Cost Concerns**:
+   - **Problem**: Real-time listeners can be expensive if not managed
+   - **Solution**: 
+     - Use `.limit()` on queries
+     - Cancel subscriptions when screens are disposed
+     - Use `.get()` for one-time reads
+   - **Learning**: Balance real-time features with cost
+
+6. **Security Rules Testing**:
+   - **Problem**: `.snapshots()` failed silently when security rules blocked access
+   - **Solution**: 
+     - Test rules in Firebase Console Simulator
+     - Add error handling in StreamBuilder
+     - Log errors with `debugPrint`
+   - **Example**: Redemption stats required special permission rule
+
+The real-time capabilities provided by Firestore's snapshot listeners fundamentally changed how we approached the app architecture. Instead of designing around manual refresh flows, we could build features assuming data is always current, leading to a more intuitive and powerful user experience.
+
 ---
 
 ## Features
