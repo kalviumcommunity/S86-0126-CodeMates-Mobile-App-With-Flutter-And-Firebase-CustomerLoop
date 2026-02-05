@@ -9,6 +9,7 @@ import '../widgets/customer_card.dart';
 import '../widgets/realtime_sync_indicator.dart';
 import 'rewards_screen.dart';
 import 'customer_insights_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -392,6 +393,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
             tooltip: 'Rewards Catalog',
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                ),
+            tooltip: 'Profile & Media Upload',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
