@@ -12,6 +12,7 @@ import 'customer_insights_screen.dart';
 import 'profile_screen.dart';
 import 'cloud_functions_demo.dart';
 import 'push_notifications_screen.dart';
+import 'firestore_security_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -428,6 +429,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
             tooltip: 'Push Notifications',
+          ),
+          IconButton(
+            icon: const Icon(Icons.security),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FirestoreSecurityScreen(),
+                  ),
+                ),
+            tooltip: 'Firestore Security',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
