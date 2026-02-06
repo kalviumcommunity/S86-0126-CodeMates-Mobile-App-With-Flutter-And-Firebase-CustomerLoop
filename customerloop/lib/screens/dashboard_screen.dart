@@ -11,6 +11,7 @@ import 'rewards_screen.dart';
 import 'customer_insights_screen.dart';
 import 'profile_screen.dart';
 import 'cloud_functions_demo.dart';
+import 'push_notifications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -416,6 +417,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
             tooltip: 'Cloud Functions Demo',
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PushNotificationsScreen(),
+                  ),
+                ),
+            tooltip: 'Push Notifications',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

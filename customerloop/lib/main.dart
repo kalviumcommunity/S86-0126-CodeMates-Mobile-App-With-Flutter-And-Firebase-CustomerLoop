@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,21 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   debugPrint('✅ Firebase initialized successfully');
+
+  // Initialize Firebase Cloud Messaging
+  debugPrint('🔔 Initializing Push Notifications...');
+
+  // Set background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // Initialize notification service
+  try {
+    await NotificationService().initialize();
+    debugPrint('✅ Push Notifications initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ Push Notifications initialization failed: $e');
+  }
+
   debugPrint('📱 Launching app...');
 
   runApp(const MyApp());
@@ -43,7 +60,9 @@ class MyApp extends StatelessWidget {
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          debugPrint('🔍 Auth State Check - Connection: ${snapshot.connectionState}');
+          debugPrint(
+            '🔍 Auth State Check - Connection: ${snapshot.connectionState}',
+          );
 
           // Firebase is checking session persistence
           if (snapshot.connectionState == ConnectionState.waiting) {
