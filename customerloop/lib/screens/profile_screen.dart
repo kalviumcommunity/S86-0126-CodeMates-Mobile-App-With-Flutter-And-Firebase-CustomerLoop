@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/storage_service.dart';
 import '../services/auth_service.dart';
@@ -33,29 +32,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserImages() async {
-    final user = _authService.currentUser;
-    if (user != null) {
-      // Check if profile picture exists
-      final profileExists = await _storageService.fileExists(
-        'profiles/${user.uid}.jpg',
-      );
-      if (profileExists) {
-        _profileImageUrl = await _storageService.getDownloadURL(
-          'profiles/${user.uid}.jpg',
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        // Check if profile picture exists
+        try {
+          final profileExists = await _storageService.fileExists(
+            'profiles/${user.uid}.jpg',
+          );
+          if (profileExists) {
+            _profileImageUrl = await _storageService.getDownloadURL(
+              'profiles/${user.uid}.jpg',
+            );
+          }
+        } catch (e) {
+          // Profile image doesn't exist or Storage not set up yet
+          debugPrint('Profile image not found: $e');
+        }
+
+        // Check if business logo exists
+        try {
+          final logoExists = await _storageService.fileExists(
+            'logos/${user.uid}.jpg',
+          );
+          if (logoExists) {
+            _businessLogoUrl = await _storageService.getDownloadURL(
+              'logos/${user.uid}.jpg',
+            );
+          }
+        } catch (e) {
+          // Logo doesn't exist or Storage not set up yet
+          debugPrint('Business logo not found: $e');
+        }
+
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      // Handle general errors gracefully
+      debugPrint('Error loading user images: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '⚠️ Firebase Storage not set up. Enable it in Firebase Console.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
         );
       }
-
-      // Check if business logo exists
-      final logoExists = await _storageService.fileExists(
-        'logos/${user.uid}.jpg',
-      );
-      if (logoExists) {
-        _businessLogoUrl = await _storageService.getDownloadURL(
-          'logos/${user.uid}.jpg',
-        );
-      }
-
-      setState(() {});
     }
   }
 

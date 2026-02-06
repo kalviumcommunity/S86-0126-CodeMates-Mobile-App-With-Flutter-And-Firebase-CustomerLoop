@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for CustomerLoop
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function - check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function - check if file is an image
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Helper function - check file size (max 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // Profile images - users can upload their own profile picture
+    match /profile_images/{userId}/{allPaths=**} {
+      allow read: if true; // Public read
+      allow write: if isAuthenticated() 
+                   && request.auth.uid == userId
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // Customer images - authenticated users can upload
+    match /customer_images/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // Product/Item images
+    match /product_images/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // Reward images
+    match /reward_images/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // General uploads folder
+    match /uploads/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

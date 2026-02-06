@@ -149,7 +149,7 @@ class CustomerService {
     String businessId,
     String searchQuery,
   ) {
-    final String searchEnd = searchQuery + '\\uf8ff';
+    final String searchEnd = '$searchQuery\\uf8ff';
 
     return _firestore
         .collection(customersCollection)
@@ -178,7 +178,7 @@ class CustomerService {
         .orderBy(sortField, descending: descending);
 
     if (limit != null) {
-      query = query.limit(limit) as Query<Map<String, dynamic>>;
+      query = query.limit(limit);
     }
 
     return query.snapshots().map(
