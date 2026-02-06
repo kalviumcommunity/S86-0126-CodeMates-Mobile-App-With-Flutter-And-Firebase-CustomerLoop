@@ -21,7 +21,7 @@ class _CustomerInsightsScreenState extends State<CustomerInsightsScreen> {
   String _selectedView = 'top_customers';
   int _topLimit = 10;
   int _minPoints = 500;
-  int _daysAgo = 30;
+  final int _daysAgo = 30;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +287,7 @@ class _CustomerInsightsScreenState extends State<CustomerInsightsScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${customer.phone}'),
+                          Text(customer.phone),
                           const SizedBox(height: 4),
                           Row(
                             children: [

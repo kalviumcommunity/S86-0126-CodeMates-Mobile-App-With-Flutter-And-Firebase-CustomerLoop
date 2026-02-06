@@ -2,6 +2,7 @@
 ///
 /// This file demonstrates how to use all custom widgets in the CustomerLoop app
 /// Copy these examples into your screens for quick implementation
+library;
 
 import 'package:flutter/material.dart';
 import '../widgets/stat_card.dart';

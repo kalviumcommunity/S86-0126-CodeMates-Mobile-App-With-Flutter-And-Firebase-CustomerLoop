@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StateManagementDemo extends StatefulWidget {
-  const StateManagementDemo({Key? key}) : super(key: key);
+  const StateManagementDemo({super.key});
 
   @override
   State<StateManagementDemo> createState() => _StateManagementDemoState();
