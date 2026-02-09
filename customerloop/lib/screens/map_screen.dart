@@ -6,7 +6,7 @@ import '../services/location_service.dart';
 
 /// MapScreen - Interactive Google Maps display with full features
 /// Demonstrates Google Maps SDK integration, markers, location tracking
-/// Assignment 3.40: Integrating Google Maps SDK for Flutter
+/// Assignment 3.40 & 3.41: Google Maps with Custom Markers and Live Location
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -34,6 +34,21 @@ class _MapScreenState extends State<MapScreen> {
   // Markers
   final Set<Marker> _markers = {};
   int _markerIdCounter = 0;
+
+  // Polylines for drawing paths
+  final Set<Polyline> _polylines = {};
+  final List<LatLng> _pathPoints = [];
+  bool _showPath = false;
+
+  // Custom marker icons
+  BitmapDescriptor? _userMarkerIcon;
+  BitmapDescriptor? _businessMarkerIcon;
+  BitmapDescriptor? _customMarkerIcon;
+  bool _customIconsLoaded = false;
+
+  // Distance tracking
+  double? _totalDistanceTraveled = 0.0;
+  LatLng? _lastTrackedPosition;
 
   // Initial camera position (San Francisco by default)
   static const CameraPosition _defaultPosition = CameraPosition(
@@ -80,11 +95,56 @@ class _MapScreenState extends State<MapScreen> {
   // ============================================
 
   Future<void> _initializeMap() async {
+    // Load custom marker icons
+    await _loadCustomMarkers();
+
     // Add default markers for business locations
     _addBusinessMarkers();
 
     // Request location permission
     await _requestLocationPermission();
+  }
+
+  // ============================================
+  // CUSTOM MARKER ICONS
+  // ============================================
+
+  Future<void> _loadCustomMarkers() async {
+    try {
+      // Try to load custom marker icons from assets
+      // If assets don't exist, fall back to default colored markers
+
+      // Note: Add PNG files to assets/icons/ folder for custom icons
+      // For now, we use Material Design icons as programmatic markers
+
+      setState(() {
+        _customIconsLoaded = true;
+      });
+    } catch (e) {
+      // Use default markers if custom icons fail to load
+      debugPrint('Custom markers not loaded: $e');
+      setState(() {
+        _customIconsLoaded = false;
+      });
+    }
+  }
+
+  BitmapDescriptor _getMarkerIcon(String type) {
+    // Return colored markers based on type
+    switch (type) {
+      case 'user':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      case 'business':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+      case 'customer':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      case 'destination':
+        return BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueOrange,
+        );
+      default:
+        return BitmapDescriptor.defaultMarker;
+    }
   }
 
   void _addBusinessMarkers() {
@@ -93,7 +153,8 @@ class _MapScreenState extends State<MapScreen> {
         position: LatLng(location['lat'], location['lng']),
         title: location['name'],
         snippet: location['description'],
-        color: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        color: _getMarkerIcon('business'),
+        markerType: 'business',
       );
     }
   }
@@ -168,9 +229,10 @@ class _MapScreenState extends State<MapScreen> {
       // Add marker at current location
       _addMarker(
         position: LatLng(position.latitude, position.longitude),
-        title: 'Your Location',
-        snippet: 'Current position',
-        color: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        title: '📍 Your Location',
+        snippet:
+            'Current position\nAccuracy: ±${position.accuracy.toStringAsFixed(1)}m',
+        markerType: 'user',
       );
 
       _showSnackBar('✅ Location found!', Colors.green);
@@ -184,19 +246,55 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _startLocationTracking() {
+    // Clear previous path
+    _pathPoints.clear();
+    _totalDistanceTraveled = 0.0;
+    _lastTrackedPosition = null;
+
     _positionStream = _locationService.getLocationStream().listen(
       (Position position) {
+        final currentLatLng = LatLng(position.latitude, position.longitude);
+
         setState(() {
           _currentPosition = position;
           _locationStatus =
               'Tracking: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+
+          // Add point to path
+          _pathPoints.add(currentLatLng);
+
+          // Calculate distance traveled
+          if (_lastTrackedPosition != null) {
+            final distance = _locationService.calculateDistance(
+              startLatitude: _lastTrackedPosition!.latitude,
+              startLongitude: _lastTrackedPosition!.longitude,
+              endLatitude: currentLatLng.latitude,
+              endLongitude: currentLatLng.longitude,
+            );
+            _totalDistanceTraveled = (_totalDistanceTraveled ?? 0) + distance;
+          }
+          _lastTrackedPosition = currentLatLng;
+
+          // Update polyline to show path
+          if (_showPath && _pathPoints.length > 1) {
+            _polylines.clear();
+            _polylines.add(
+              Polyline(
+                polylineId: const PolylineId('tracking_path'),
+                points: _pathPoints,
+                color: Colors.blue,
+                width: 4,
+                geodesic: true,
+              ),
+            );
+          }
+
+          // Update user marker position
+          _updateUserMarker(currentLatLng);
         });
 
         // Update camera position smoothly
-        _moveCameraToPosition(
-          LatLng(position.latitude, position.longitude),
-          zoom: 16.0,
-        );
+        _moveCameraToPosition(currentLatLng, zoom: 16.0);
       },
       onError: (error) {
         _showSnackBar('Tracking error: $error', Colors.red);
@@ -209,7 +307,45 @@ class _MapScreenState extends State<MapScreen> {
   void _stopLocationTracking() {
     _positionStream?.cancel();
     _positionStream = null;
-    _showSnackBar('⏹️ Tracking stopped', Colors.orange);
+    _showSnackBar(
+      '⏹️ Tracking stopped | Distance: ${_locationService.formatDistance(_totalDistanceTraveled ?? 0)}',
+      Colors.orange,
+    );
+  }
+
+  void _updateUserMarker(LatLng position) {
+    // Remove old user marker
+    _markers.removeWhere(
+      (marker) => marker.markerId.value.startsWith('user_location'),
+    );
+
+    // Add updated user marker
+    _markers.add(
+      Marker(
+        markerId: const MarkerId('user_location_live'),
+        position: position,
+        infoWindow: InfoWindow(
+          title: '📍 You are here',
+          snippet:
+              'Distance: ${_locationService.formatDistance(_totalDistanceTraveled ?? 0)}',
+        ),
+        icon: _getMarkerIcon('user'),
+        anchor: const Offset(0.5, 0.5),
+      ),
+    );
+  }
+
+  void _togglePathVisibility() {
+    setState(() {
+      _showPath = !_showPath;
+      if (!_showPath) {
+        _polylines.clear();
+      }
+    });
+    _showSnackBar(
+      _showPath ? '🛤️ Path visible' : '🛤️ Path hidden',
+      Colors.blue,
+    );
   }
 
   // ============================================
@@ -247,14 +383,15 @@ class _MapScreenState extends State<MapScreen> {
     required String title,
     String snippet = '',
     BitmapDescriptor? color,
+    String markerType = 'custom',
   }) {
-    final markerId = MarkerId('marker_${_markerIdCounter++}');
+    final markerId = MarkerId('${markerType}_marker_${_markerIdCounter++}');
 
     final marker = Marker(
       markerId: markerId,
       position: position,
       infoWindow: InfoWindow(title: title, snippet: snippet),
-      icon: color ?? BitmapDescriptor.defaultMarker,
+      icon: color ?? _getMarkerIcon(markerType),
     );
 
     setState(() {
@@ -266,18 +403,35 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _markers.clear();
       _markerIdCounter = 0;
+      _polylines.clear();
+      _pathPoints.clear();
+      _totalDistanceTraveled = 0.0;
     });
-    _showSnackBar('🗑️ All markers cleared', Colors.grey);
+    _showSnackBar('🗑️ All markers and paths cleared', Colors.grey);
   }
 
   void _onMapTapped(LatLng position) {
+    // Calculate distance from current position if available
+    String distanceInfo = '';
+    if (_currentPosition != null) {
+      final distance = _locationService.calculateDistance(
+        startLatitude: _currentPosition!.latitude,
+        startLongitude: _currentPosition!.longitude,
+        endLatitude: position.latitude,
+        endLongitude: position.longitude,
+      );
+      distanceInfo =
+          '\nDistance from you: ${_locationService.formatDistance(distance)}';
+    }
+
     _addMarker(
       position: position,
       title: 'Custom Marker',
       snippet:
           'Lat: ${position.latitude.toStringAsFixed(4)}, '
-          'Lng: ${position.longitude.toStringAsFixed(4)}',
-      color: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          'Lng: ${position.longitude.toStringAsFixed(4)}'
+          '$distanceInfo',
+      markerType: 'destination',
     );
     _showSnackBar('📍 Marker added', Colors.green);
   }
@@ -385,6 +539,7 @@ class _MapScreenState extends State<MapScreen> {
               _mapController.complete(controller);
             },
             markers: _markers,
+            polylines: _polylines,
             myLocationEnabled: _myLocationEnabled,
             myLocationButtonEnabled: _myLocationButtonEnabled,
             trafficEnabled: _trafficEnabled,
@@ -479,6 +634,14 @@ class _MapScreenState extends State<MapScreen> {
                                   : _stopLocationTracking,
                         ),
                         _buildActionButton(
+                          icon:
+                              _showPath
+                                  ? Icons.timeline
+                                  : Icons.timeline_outlined,
+                          label: 'Path',
+                          onPressed: _togglePathVisibility,
+                        ),
+                        _buildActionButton(
                           icon: Icons.zoom_in,
                           label: 'Zoom+',
                           onPressed: _zoomIn,
@@ -490,6 +653,19 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ],
                     ),
+                    if (_totalDistanceTraveled != null &&
+                        _totalDistanceTraveled! > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          '📏 Distance traveled: ${_locationService.formatDistance(_totalDistanceTraveled!)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
