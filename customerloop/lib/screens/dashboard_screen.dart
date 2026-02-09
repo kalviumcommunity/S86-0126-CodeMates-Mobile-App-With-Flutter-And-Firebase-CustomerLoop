@@ -14,6 +14,7 @@ import 'cloud_functions_demo.dart';
 import 'push_notifications_screen.dart';
 import 'firestore_security_screen.dart';
 import 'map_screen.dart';
+import 'items_crud_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -450,6 +451,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   MaterialPageRoute(builder: (context) => const MapScreen()),
                 ),
             tooltip: 'Google Maps',
+          ),
+          IconButton(
+            icon: const Icon(Icons.list_alt),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ItemsCRUDScreen(),
+                  ),
+                ),
+            tooltip: 'CRUD Demo',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
