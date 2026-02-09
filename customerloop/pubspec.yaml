@@ -48,6 +48,11 @@ dependencies:
   
   # Local notifications for foreground display
   flutter_local_notifications: ^17.0.0
+  
+  # Google Maps for location-based features
+  google_maps_flutter: ^2.5.0
+  geolocator: ^11.0.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:
