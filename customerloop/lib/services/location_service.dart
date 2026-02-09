@@ -86,10 +86,7 @@ class LocationService {
 
     // Get current position
     return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
-      ),
+      desiredAccuracy: LocationAccuracy.high,
     );
   }
 
@@ -102,9 +99,7 @@ class LocationService {
       throw Exception('Location permission not granted');
     }
 
-    return await Geolocator.getCurrentPosition(
-      locationSettings: LocationSettings(accuracy: accuracy),
-    );
+    return await Geolocator.getCurrentPosition(desiredAccuracy: accuracy);
   }
 
   // ============================================
