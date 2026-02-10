@@ -8,6 +8,10 @@ import 'favorites_screen.dart';
 import 'settings_screen.dart';
 import 'form_validation_demo.dart';
 import 'multi_step_form_demo.dart';
+import 'bottom_nav_demo.dart';
+import 'pageview_bottom_nav_demo.dart';
+import 'bottom_nav_demo.dart';
+import 'pageview_bottom_nav_demo.dart';
 
 class ProviderDemoHome extends StatelessWidget {
   const ProviderDemoHome({super.key});
@@ -133,6 +137,30 @@ class ProviderDemoHome extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const MultiStepFormDemo(),
+                      ),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'Bottom Navigation',
+                description: 'Tab navigation with state preservation',
+                icon: Icons.navigation,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BottomNavDemo()),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'PageView Navigation',
+                description: 'Swipeable tabs with smooth animations',
+                icon: Icons.swipe,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PageViewBottomNavDemo(),
                       ),
                     ),
               ),
