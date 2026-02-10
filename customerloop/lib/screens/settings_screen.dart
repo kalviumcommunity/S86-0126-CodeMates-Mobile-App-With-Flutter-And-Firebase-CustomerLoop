@@ -14,9 +14,7 @@ class SettingsScreen extends StatelessWidget {
     final favoritesState = context.watch<FavoritesState>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings Demo'),
-      ),
+      appBar: AppBar(title: const Text('Settings Demo')),
       body: ListView(
         children: [
           // Theme Settings
@@ -33,9 +31,7 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.palette),
             title: const Text('Primary Color'),
-            trailing: CircleAvatar(
-              backgroundColor: themeState.primaryColor,
-            ),
+            trailing: CircleAvatar(backgroundColor: themeState.primaryColor),
             onTap: () => _showColorPicker(context),
           ),
 
@@ -69,9 +65,9 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Reset Counter'),
             onTap: () {
               context.read<CounterState>().reset();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Counter reset!')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Counter reset!')));
             },
           ),
           ListTile(
@@ -121,41 +117,44 @@ class SettingsScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Choose Primary Color'),
-        content: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: colors.map((color) {
-            return InkWell(
-              onTap: () {
-                context.read<ThemeState>().setPrimaryColor(color);
-                Navigator.pop(ctx);
-              },
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: context.read<ThemeState>().primaryColor == color
-                        ? Colors.black
-                        : Colors.transparent,
-                    width: 3,
-                  ),
-                ),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Choose Primary Color'),
+            content: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children:
+                  colors.map((color) {
+                    return InkWell(
+                      onTap: () {
+                        context.read<ThemeState>().setPrimaryColor(color);
+                        Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color:
+                                context.read<ThemeState>().primaryColor == color
+                                    ? Colors.black
+                                    : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
               ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

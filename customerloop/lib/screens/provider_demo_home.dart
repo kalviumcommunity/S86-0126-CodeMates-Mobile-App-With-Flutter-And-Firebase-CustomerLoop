@@ -6,6 +6,8 @@ import '../providers/theme_state.dart';
 import 'counter_screen.dart';
 import 'favorites_screen.dart';
 import 'settings_screen.dart';
+import 'form_validation_demo.dart';
+import 'multi_step_form_demo.dart';
 
 class ProviderDemoHome extends StatelessWidget {
   const ProviderDemoHome({super.key});
@@ -29,105 +31,139 @@ class ProviderDemoHome extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // State Overview Card
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Shared State Overview',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // State Overview Card
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Shared State Overview',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _StatCard(
+                            icon: Icons.numbers,
+                            label: 'Counter',
+                            value: '${counterState.count}',
+                            color: Colors.blue,
+                          ),
+                          _StatCard(
+                            icon: Icons.favorite,
+                            label: 'Favorites',
+                            value: '${favoritesState.itemCount}',
+                            color: Colors.red,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Navigation Buttons
+              _NavigationButton(
+                title: 'Counter Demo',
+                description: 'Increment/Decrement with Provider',
+                icon: Icons.add_circle_outline,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CounterScreen()),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'Favorites Demo',
+                description: 'Add/Remove items across screens',
+                icon: Icons.favorite_border,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FavoritesScreen(),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _StatCard(
-                          icon: Icons.numbers,
-                          label: 'Counter',
-                          value: '${counterState.count}',
-                          color: Colors.blue,
-                        ),
-                        _StatCard(
-                          icon: Icons.favorite,
-                          label: 'Favorites',
-                          value: '${favoritesState.itemCount}',
-                          color: Colors.red,
-                        ),
-                      ],
+              ),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'Settings Demo',
+                description: 'Theme customization with Provider',
+                icon: Icons.settings,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
                     ),
-                  ],
-                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'Form Validation',
+                description: 'Complex form with multiple validators',
+                icon: Icons.assignment,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FormValidationDemo(),
+                      ),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              _NavigationButton(
+                title: 'Multi-Step Form',
+                description: 'Registration flow with multiple steps',
+                icon: Icons.receipt_long,
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MultiStepFormDemo(),
+                      ),
+                    ),
+              ),
+              const SizedBox(height: 24),
 
-            // Navigation Buttons
-            _NavigationButton(
-              title: 'Counter Demo',
-              description: 'Increment/Decrement with Provider',
-              icon: Icons.add_circle_outline,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CounterScreen()),
+              // Quick Actions
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<CounterState>().increment(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Quick +1'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<CounterState>().reset(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reset Counter'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<FavoritesState>().clearAll(),
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Clear Favorites'),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            _NavigationButton(
-              title: 'Favorites Demo',
-              description: 'Add/Remove items across screens',
-              icon: Icons.favorite_border,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _NavigationButton(
-              title: 'Settings Demo',
-              description: 'Theme customization with Provider',
-              icon: Icons.settings,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              ),
-            ),
-            const Spacer(),
-
-            // Quick Actions
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => context.read<CounterState>().increment(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Quick +1'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => context.read<CounterState>().reset(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reset Counter'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => context.read<FavoritesState>().clearAll(),
-                  icon: const Icon(Icons.clear_all),
-                  label: const Text('Clear Favorites'),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -191,10 +227,7 @@ class _NavigationButton extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: Icon(icon, size: 32),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(description),
         trailing: const Icon(Icons.arrow_forward_ios),
         onTap: onTap,

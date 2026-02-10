@@ -24,7 +24,7 @@ class _DemoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeState = context.watch<ThemeState>();
-    
+
     return MaterialApp(
       title: 'Provider State Management Demo',
       themeMode: themeState.themeMode,

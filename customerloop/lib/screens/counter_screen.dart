@@ -25,29 +25,27 @@ class CounterScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Button pressed:',
-              style: TextStyle(fontSize: 20),
-            ),
+            const Text('Button pressed:', style: TextStyle(fontSize: 20)),
             const SizedBox(height: 16),
             Text(
               '${counterState.count}',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: counterState.count >= 10
+                fontWeight: FontWeight.bold,
+                color:
+                    counterState.count >= 10
                         ? Colors.green
                         : counterState.count >= 5
-                            ? Colors.orange
-                            : Colors.blue,
-                  ),
+                        ? Colors.orange
+                        : Colors.blue,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               counterState.count >= 10
                   ? '🎉 Amazing!'
                   : counterState.count >= 5
-                      ? '😊 Great!'
-                      : '👍 Keep going!',
+                  ? '😊 Great!'
+                  : '👍 Keep going!',
               style: const TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 32),
@@ -75,10 +73,7 @@ class CounterScreen extends StatelessWidget {
                 'This counter state is shared across the entire app. '
                 'Go back to see the updated value!',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
               ),
             ),
           ],
