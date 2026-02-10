@@ -56,23 +56,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Clear All?'),
-                    content: const Text('Remove all favorite items?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
+                  builder:
+                      (ctx) => AlertDialog(
+                        title: const Text('Clear All?'),
+                        content: const Text('Remove all favorite items?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              context.read<FavoritesState>().clearAll();
+                              Navigator.pop(ctx);
+                            },
+                            child: const Text('Clear'),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () {
-                          context.read<FavoritesState>().clearAll();
-                          Navigator.pop(ctx);
-                        },
-                        child: const Text('Clear'),
-                      ),
-                    ],
-                  ),
                 );
               },
               tooltip: 'Clear All',
@@ -103,15 +104,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
-                  children: _suggestions
-                      .where((s) => !favoritesState.contains(s))
-                      .map(
-                        (suggestion) => ActionChip(
-                          label: Text(suggestion),
-                          onPressed: () => _addFavorite(suggestion),
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      _suggestions
+                          .where((s) => !favoritesState.contains(s))
+                          .map(
+                            (suggestion) => ActionChip(
+                              label: Text(suggestion),
+                              onPressed: () => _addFavorite(suggestion),
+                            ),
+                          )
+                          .toList(),
                 ),
               ],
             ),
@@ -120,81 +122,84 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
           // Favorites List
           Expanded(
-            child: favoritesState.itemCount == 0
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.favorite_border,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No favorites yet!',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
+            child:
+                favoritesState.itemCount == 0
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.favorite_border,
+                            size: 64,
+                            color: Colors.grey[400],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Add items using the field above',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: favoritesState.itemCount,
-                    itemBuilder: (context, index) {
-                      final item = favoritesState.items[index];
-                      return Dismissible(
-                        key: Key(item),
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 16),
-                          child: const Icon(
-                            Icons.delete,
-                            color: Colors.white,
-                          ),
-                        ),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) {
-                          context.read<FavoritesState>().removeItem(item);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Removed "$item"'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () {
-                                  context.read<FavoritesState>().addItem(item);
-                                },
-                              ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No favorites yet!',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
                             ),
-                          );
-                        },
-                        child: ListTile(
-                          leading: const Icon(
-                            Icons.favorite,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add items using the field above',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      itemCount: favoritesState.itemCount,
+                      itemBuilder: (context, index) {
+                        final item = favoritesState.items[index];
+                        return Dismissible(
+                          key: Key(item),
+                          background: Container(
                             color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
                           ),
-                          title: Text(item),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              context.read<FavoritesState>().removeItem(item);
-                            },
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) {
+                            context.read<FavoritesState>().removeItem(item);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Removed "$item"'),
+                                action: SnackBarAction(
+                                  label: 'Undo',
+                                  onPressed: () {
+                                    context.read<FavoritesState>().addItem(
+                                      item,
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.favorite,
+                              color: Colors.red,
+                            ),
+                            title: Text(item),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                context.read<FavoritesState>().removeItem(item);
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
