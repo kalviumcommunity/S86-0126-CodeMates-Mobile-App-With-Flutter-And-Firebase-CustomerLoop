@@ -18,6 +18,7 @@ import 'firestore_security_screen.dart';
 import 'map_screen.dart';
 import 'items_crud_screen.dart';
 import 'theme_settings_screen.dart';
+import 'states_demo_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -480,6 +481,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
             tooltip: 'Theme Settings',
+          ),
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StatesDemoScreen(),
+                  ),
+                ),
+            tooltip: 'States Demo',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
