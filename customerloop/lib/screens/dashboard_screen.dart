@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/customer_service.dart';
 import '../services/rewards_service.dart';
@@ -7,6 +8,7 @@ import '../widgets/stat_card.dart';
 import '../widgets/toggle_view_button.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/realtime_sync_indicator.dart';
+import '../providers/theme_provider.dart';
 import 'rewards_screen.dart';
 import 'customer_insights_screen.dart';
 import 'profile_screen.dart';
@@ -15,6 +17,7 @@ import 'push_notifications_screen.dart';
 import 'firestore_security_screen.dart';
 import 'map_screen.dart';
 import 'items_crud_screen.dart';
+import 'theme_settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -462,6 +465,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
             tooltip: 'CRUD Demo',
+          ),
+          IconButton(
+            icon: Icon(
+              context.watch<ThemeProvider>().isDarkMode(context)
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ThemeSettingsScreen(),
+                  ),
+                ),
+            tooltip: 'Theme Settings',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
