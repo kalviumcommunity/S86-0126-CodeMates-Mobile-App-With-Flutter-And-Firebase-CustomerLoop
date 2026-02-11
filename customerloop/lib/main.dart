@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
+import 'providers/theme_provider.dart';
+import 'theme/app_theme_light.dart';
+import 'theme/app_theme_dark.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +39,12 @@ void main() async {
 
   debugPrint('📱 Launching app...');
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -43,19 +52,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Watch theme provider for changes
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MaterialApp(
       title: 'CustomerLoop - Loyalty Platform',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-        cardTheme: const CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-        ),
-      ),
+
+      // Assignment 3.46: Theme support with light/dark/system modes
+      theme: AppThemeLight.theme,
+      darkTheme: AppThemeDark.theme,
+      themeMode: themeProvider.themeMode,
+
       // Auto-login flow: Listen to auth state changes and route accordingly
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
