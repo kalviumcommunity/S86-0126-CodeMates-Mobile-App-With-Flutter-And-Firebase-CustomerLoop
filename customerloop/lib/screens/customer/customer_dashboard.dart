@@ -543,7 +543,38 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '∞',
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: Colors.blueGrey,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'CustomerLoop',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.blueGrey,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
