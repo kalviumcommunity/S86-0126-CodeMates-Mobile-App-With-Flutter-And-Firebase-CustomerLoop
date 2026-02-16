@@ -1,205 +1,173 @@
 rules_version = '2';
-
-// Firestore Security Rules for CustomerLoop
-// Last Updated: February 6, 2026
-// 
-// These rules ensure:
-// - Only authenticated users can access data
-// - Users can only access their own data
-// - Admin operations are restricted
-// - Data validation is enforced
-
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ============================================
-    // HELPER FUNCTIONS
-    // ============================================
-    
-    // Check if user is authenticated
+    // Helper function to check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Check if user is accessing their own data
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
     
-    // Check if user is admin (customize based on your admin logic)
-    function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    // Helper function to check if user is owner
+    function isOwner() {
+      return isAuthenticated() && getUserRole() == 'owner';
     }
     
-    // Validate email format
-    function isValidEmail(email) {
-      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    // Helper function to check if user is customer
+    function isCustomer() {
+      return isAuthenticated() && getUserRole() == 'customer';
     }
     
-    // Check if data has required fields
-    function hasRequiredFields(data, fields) {
-      return data.keys().hasAll(fields);
+    // Helper function to get user's shop ID
+    function getUserShopId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
     }
     
-    // ============================================
-    // USERS COLLECTION
-    // ============================================
-    
-    // Users can read and write only their own profile
+    // Users collection - users can only read/write their own document
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && 
-                    hasRequiredFields(request.resource.data, ['email', 'createdAt']);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if false; // Users cannot delete their own account
     }
     
-    // ============================================
-    // CUSTOMERS COLLECTION
-    // ============================================
-    
-    // Business owners can manage their own customers
-    match /customers/{customerId} {
+    // Shops collection
+    match /shops/{shopId} {
+      // Owners can read their own shop
       allow read: if isAuthenticated() && 
-                  resource.data.businessId == request.auth.uid;
+                     (resource.data.ownerId == request.auth.uid || 
+                      getUserShopId() == shopId);
       
+      // Only owners can create shops (during registration)
       allow create: if isAuthenticated() && 
-                    request.resource.data.businessId == request.auth.uid &&
-                    hasRequiredFields(request.resource.data, 
-                      ['name', 'email', 'phone', 'businessId', 'createdAt']);
+                       request.resource.data.ownerId == request.auth.uid;
       
+      // Only shop owners can update their shop
       allow update: if isAuthenticated() && 
-                    resource.data.businessId == request.auth.uid;
+                       resource.data.ownerId == request.auth.uid;
       
+      // Shop owners can delete their shop
       allow delete: if isAuthenticated() && 
-                    resource.data.businessId == request.auth.uid;
+                       resource.data.ownerId == request.auth.uid;
       
-      // Customer visits subcollection
-      match /visits/{visitId} {
+      // Customers subcollection
+      match /customers/{customerId} {
+        // Owners can read/write their shop's customers
+        // Customers can read their own profile
         allow read: if isAuthenticated() && 
-                    get(/databases/$(database)/documents/customers/$(customerId)).data.businessId == request.auth.uid;
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
         
-        allow write: if isAuthenticated() && 
-                     get(/databases/$(database)/documents/customers/$(customerId)).data.businessId == request.auth.uid;
+        allow create: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow update: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow delete: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+      }
+      
+      // Visits subcollection
+      match /visits/{visitId} {
+        // Owners can read/write visits for their shop
+        // Customers can read their own visits
+        allow read: if isAuthenticated() && 
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
+        
+        allow create: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow update: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow delete: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+      }
+      
+      // Rewards subcollection
+      match /rewards/{rewardId} {
+        // Everyone in the shop can read rewards
+        allow read: if isAuthenticated() && 
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
+        
+        // Only owners can create/update/delete rewards
+        allow create: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow update: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow delete: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+      }
+      
+      // Redemptions subcollection
+      match /redemptions/{redemptionId} {
+        // Owners can read all redemptions
+        // Customers can read their own redemptions
+        allow read: if isAuthenticated() && 
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
+        
+        // Customers can create redemptions (redeem rewards)
+        // Owners can also create redemptions on behalf of customers
+        allow create: if isAuthenticated() && 
+                         (getUserShopId() == shopId ||
+                          get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid);
+        
+        // Only owners can update/delete redemptions
+        allow update: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow delete: if isAuthenticated() && 
+                         get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+      }
+      
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        // Users in the shop can read all notifications
+        // Owners can read all notifications in their shop
+        allow read: if isAuthenticated() && 
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
+        
+        // System can create notifications (via backend/functions)
+        // Owners can create notifications for customers
+        // Anyone authenticated can create (service handles this)
+        allow create: if isAuthenticated();
+        
+        // Users can update notifications (mark as read)
+        allow update: if isAuthenticated() && 
+                         (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                          getUserShopId() == shopId);
+        
+        // Users can delete notifications
+        allow delete: if isAuthenticated() && 
+                         (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                          getUserShopId() == shopId);
+      }
+      
+      // Settings subcollection
+      match /settings/{settingId} {
+        // Owners and customers can read settings
+        allow read: if isAuthenticated() && 
+                       (get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid ||
+                        getUserShopId() == shopId);
+        
+        // Only owners can create/update settings
+        allow create, update: if isAuthenticated() && 
+                                 get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+        
+        allow delete: if false; // Settings should not be deleted
       }
     }
-    
-    // ============================================
-    // REWARDS COLLECTION
-    // ============================================
-    
-    // Business owners can manage their own rewards
-    match /rewards/{rewardId} {
-      allow read: if isAuthenticated() && 
-                  resource.data.businessId == request.auth.uid;
-      
-      allow create: if isAuthenticated() && 
-                    request.resource.data.businessId == request.auth.uid &&
-                    hasRequiredFields(request.resource.data,
-                      ['title', 'description', 'pointsCost', 'businessId', 'isActive']);
-      
-      allow update: if isAuthenticated() && 
-                    resource.data.businessId == request.auth.uid;
-      
-      allow delete: if isAuthenticated() && 
-                    resource.data.businessId == request.auth.uid;
-    }
-    
-    // ============================================
-    // REDEMPTIONS COLLECTION
-    // ============================================
-    
-    // Track reward redemptions
-    match /redemptions/{redemptionId} {
-      allow read: if isAuthenticated() && 
-                  (resource.data.businessId == request.auth.uid ||
-                   resource.data.customerId == request.auth.uid);
-      
-      allow create: if isAuthenticated() && 
-                    request.resource.data.businessId == request.auth.uid &&
-                    hasRequiredFields(request.resource.data,
-                      ['rewardId', 'customerId', 'businessId', 'redeemedAt', 'status']);
-      
-      allow update: if isAuthenticated() && 
-                    resource.data.businessId == request.auth.uid;
-      
-      allow delete: if isAdmin();  // Only admins can delete redemptions
-    }
-    
-    // ============================================
-    // ANALYTICS COLLECTION
-    // ============================================
-    
-    // Analytics data - read-only for business owners
-    match /analytics/{businessId} {
-      allow read: if isOwner(businessId);
-      allow write: if false;  // Only server-side writes via Cloud Functions
-      
-      // Time-series data
-      match /metrics/{metricId} {
-        allow read: if isOwner(businessId);
-        allow write: if false;  // Server-side only
-      }
-    }
-    
-    // ============================================
-    // NOTIFICATIONS COLLECTION
-    // ============================================
-    
-    // User notifications
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && 
-                  resource.data.userId == request.auth.uid;
-      
-      allow create: if isAdmin();  // Only admins/system can create notifications
-      
-      allow update: if isAuthenticated() && 
-                    resource.data.userId == request.auth.uid &&
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
-      
-      allow delete: if isAuthenticated() && 
-                    resource.data.userId == request.auth.uid;
-    }
-    
-    // ============================================
-    // SETTINGS COLLECTION
-    // ============================================
-    
-    // Business settings
-    match /settings/{businessId} {
-      allow read: if isOwner(businessId);
-      allow write: if isOwner(businessId);
-    }
-    
-    // ============================================
-    // ADMIN COLLECTION
-    // ============================================
-    
-    // Admin users list (read-only)
-    match /admins/{adminId} {
-      allow read: if isAuthenticated();
-      allow write: if false;  // Only manual updates via Firebase Console
-    }
-    
-    // ============================================
-    // SECURITY TEST COLLECTION
-    // ============================================
-    
-    // Collection for testing security rules
-    match /securityTests/{testId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && 
-                    request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                    resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && 
-                    resource.data.userId == request.auth.uid;
-    }
-    
-    // ============================================
-    // DEFAULT DENY
-    // ============================================
     
     // Deny all other access by default
     match /{document=**} {
