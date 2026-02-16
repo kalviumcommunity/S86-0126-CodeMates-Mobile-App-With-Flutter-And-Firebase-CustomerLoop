@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -7,34 +9,47 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+    _controller = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 1500),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
 
-    _animationController.forward();
+    _controller.forward();
+
+    // Check onboarding status and navigate after 3 seconds
+    Timer(const Duration(seconds: 3), () async {
+      if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+        
+        if (onboardingComplete) {
+          Navigator.of(context).pushReplacementNamed('/auth');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/onboarding');
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -42,97 +57,69 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade400,
-              Colors.blue.shade800,
+              Colors.orange[700]!,
+              Colors.orange[400]!,
+              Colors.amber[600]!,
             ],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Animated Logo/App Icon
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.loyalty,
-                        size: 60,
-                        color: Colors.blue.shade600,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
                       ),
+                    ],
+                  ),
+                  child: RotationTransition(
+                    turns: _controller,
+                    child: Icon(
+                      Icons.all_inclusive,
+                      size: 80,
+                      color: Colors.orange[700],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              // App Name
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Text(
-                  'CustomerLoop',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Tagline
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Text(
-                  'Loyalty Platform',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white70,
-                        fontStyle: FontStyle.italic,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 60),
-              // Loading Indicator
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.white.withOpacity(0.9),
+                const SizedBox(height: 24),
+                const Text(
+                  'Customer Loop',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
                   ),
-                  strokeWidth: 3,
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Loading Text
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Text(
-                  'Verifying your session...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
+                const SizedBox(height: 8),
+                Text(
+                  'Rewarding Loyalty, Every Day',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
